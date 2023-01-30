@@ -80,10 +80,14 @@ def handle_person(path, entry):
         entry['author'] = [entry['author']]
     author_info['aliases'] = []
     for item in entry['author']:
-        if isinstance(item, collections.OrderedDict):
+        if isinstance(item, (collections.OrderedDict, dict)):
             author_info['aliases'].append(item["#text"].encode("utf-8"))
         else:
-            author_info['aliases'].append(item.encode("utf-8"))
+            try:
+                author_info['aliases'].append(item.encode("utf-8"))
+            except:
+                print(item)
+                Pdb().set_trace()
 
     for alias in author_info['aliases']:
         name_to_ids[alias].append(key)

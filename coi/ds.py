@@ -98,6 +98,7 @@ class User:
         self.email_id = row.email.strip().lower()
         assert self.email_id != ''
         self.all_primaries.add(self.email_id)
+        # print(row)
         self.primary_area = row.primary_area.split('->')[0].strip() if not pd.isna(row.primary_area) else ''
         self.is_popular = self.primary_area in POPULAR_PRIMARY_AREAS 
         self.fname = row.fname.strip().encode(ENCODING)
@@ -105,6 +106,8 @@ class User:
         self.alias = (self.fname.strip()+ ' '.encode(ENCODING) + self.lname.strip())
         self.populate_dblp_keys(row.dblp_id, author_info_map, name_to_ids)
         #
+        # print("public emails:")
+        # print(row.pub_emails)
         self.pub_emails = set([x.strip().lower() for x in row.pub_emails.replace(',',';').split(';')]) \
                                 if not pd.isna(row.pub_emails) else set()
         if self.email_id in self.config.IGNORE_PUB_MAILS_FOR_USERS:
@@ -119,8 +122,8 @@ class User:
                                 if not pd.isna(row.conflict_domains) else set()
         
         self.conflict_domains.update(self.original_conflict_domains)
-        self.explicit_conflicts = yaml.load(row.explicit_conflicts.replace('\\/','')) if not pd.isna(row.explicit_conflicts) else []
-        self.explicit_conflicts_not_in_cmt = yaml.load(row.explicit_conflicts_not_in_cmt.replace('\\/','')) if not pd.isna(row.explicit_conflicts_not_in_cmt) else []
+        # self.explicit_conflicts = yaml.safe_load(row.explicit_conflicts.replace('\\/','')) if not pd.isna(row.explicit_conflicts) else []
+        # self.explicit_conflicts_not_in_cmt = yaml.safe_load(row.explicit_conflicts_not_in_cmt.replace('\\/','')) if not pd.isna(row.explicit_conflicts_not_in_cmt) else []
         self.explicit_conflicts += self.explicit_conflicts_not_in_cmt
         self.pub_emails.add(self.email_id)
         self.populate_explicit_conflict_emails()
@@ -285,7 +288,8 @@ class Paper:
         author_list = article['author']
         self.num_authors = len(author_list)
         for index, author_name in enumerate(author_list):
-            if type(author_name) is collections.OrderedDict:
+            # if type(author_name) is collections.OrderedDict:
+            if isinstance(author_name, (collections.OrderedDict, dict)):
                 author_name = author_name["#text"]
             author_name = author_name.encode("utf-8")
             for this_dblp_id in name_to_ids[author_name]: 

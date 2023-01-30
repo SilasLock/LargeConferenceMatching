@@ -141,7 +141,7 @@ class COI:
     def read_dblp_papers(self):
         self.pid2paper = {}
         if (not os.path.exists(self.config.RELEVANT_PAPERS_DBLP)) or self.config.SHOULD_NOT_USE_EXTRACTED_PAPERS:
-            icoi.parse_xml(self.handle_relevant_article)
+            icoi.parse_xml('data/dblp/dblp.xml', self.handle_relevant_article)
             self.stats_logger.info("papers processed from dblp, {}\nRelevant papers, {}".format
                               (self.dblp_paper_counter, self.valid_dblp_paper_counter))
             with open(self.config.RELEVANT_PAPERS_DBLP,'wb') as fh:
@@ -288,33 +288,38 @@ class COI:
         self.all_users = [User(row, self.author_info_map, self.name_to_ids,'user_info',config =self.config) for row in self.users.itertuples()]
         self.user_info_count = len(self.all_users)
         self.logger.info('User Information: {}'.format(len(self.all_users)))
-        all_addn_users = [User(row,self.author_info_map,self.name_to_ids,'user_list',config = self.config) for row in self.addn_users_table.itertuples()]
-        self.logger.info('User List: {}'.format(len(all_addn_users)))
-        self.all_users.extend(all_addn_users)
+        # all_addn_users = [User(row,self.author_info_map,self.name_to_ids,'user_list',config = self.config) for row in self.addn_users_table.itertuples()]
+        # self.logger.info('User List: {}'.format(len(all_addn_users)))
+        # self.all_users.extend(all_addn_users)
         self.logger.info('Total: {}'.format(len(self.all_users)))
 
     def read_users_submissions_reviewers(self):
         self.logger.info("Read Users , submissions and reviewers from the given files")
         h2n = CONSTANTS.h2n
-        self.users = pd.read_excel(self.config.USER_FILE)
+        self.users = pd.read_csv(self.config.USER_FILE)
         self.users.columns = [ h2n[x] if x in h2n else x for x in self.users.columns]
         
-        self.submissions = pd.read_excel(self.config.SUBMISSIONS_FILE)
+        self.submissions = pd.read_csv(self.config.SUBMISSIONS_FILE)
         self.reviewers_emails = set()
-        reviewers_list = [pd.read_csv(x,sep='\t') for x in self.config.REVIEWERS_FILE_LIST]
+        reviewers_list = [pd.read_csv(x) for x in self.config.REVIEWERS_FILE_LIST] # [pd.read_excel(x,sep='\t') for x in self.config.REVIEWERS_FILE_LIST]
         if len(reviewers_list) > 0:
             self.reviewers =  pd.concat(reviewers_list)
-            self.reviewers_emails.update(set(self.reviewers['E-mail']))
+            self.reviewers_emails.update(set(self.reviewers['Email']))
             
-        ac_reviewers_list = [pd.read_csv(x,sep='\t') for x in self.config.AC_REVIEWERS_FILE_LIST]
-        if len(ac_reviewers_list) > 0:
-            self.ac_reviewers =  pd.concat(ac_reviewers_list)
-            ac_emails = set(self.ac_reviewers['Senior Meta-Reviewer Email'])
-            self.reviewers_emails.update(ac_emails)
+        # ac_reviewers_list = [pd.read_csv(x,sep='\t') for x in self.config.AC_REVIEWERS_FILE_LIST]
+        # if len(ac_reviewers_list) > 0:
+        #     self.ac_reviewers =  pd.concat(ac_reviewers_list)
+        #     ac_emails = set(self.ac_reviewers['Senior Meta-Reviewer Email'])
+        #     self.reviewers_emails.update(ac_emails)
+        # ac_reviewers_list = [pd.read_csv(x) for x in self.config.AC_REVIEWERS_FILE_LIST]
+        # if len(ac_reviewers_list) > 0:
+        #     self.ac_reviewers =  pd.concat(ac_reviewers_list)
+        #     ac_emails = set(self.ac_reviewers['Email'])
+        #     self.reviewers_emails.update(ac_emails)
 
-        self.addn_users_table = [pd.read_csv(x,sep='\t') for x in self.config.ADDITIONAL_USER_FILE_LIST]
-        self.addn_users_table = pd.concat(self.addn_users_table)
-        self.addn_users_table.columns = [h2n[x] if x in h2n else x for x in self.addn_users_table.columns]
+        # self.addn_users_table = [pd.read_csv(x,sep='\t') for x in self.config.ADDITIONAL_USER_FILE_LIST]
+        # self.addn_users_table = pd.concat(self.addn_users_table)
+        # self.addn_users_table.columns = [h2n[x] if x in h2n else x for x in self.addn_users_table.columns]
 
 
     def read_dblp_id_universe(self):
@@ -485,7 +490,8 @@ class COI:
             this_user.reset_domains()
         
         for mail in ignore_domains_for:
-            self.mail2user[mail].original_conflict_domains = set()
+            if mail in self.mail2user:
+                self.mail2user[mail].original_conflict_domains = set()
             logger.warning("Deleting all explicit conflict domains for : {}".format(mail))
             this_user.reset_domains()
 
@@ -1044,7 +1050,8 @@ class COI:
         users = self.users.merge(mail2prim,how='left',on='email')
         unique_primary = users.groupby('prim_email').agg({'email':'count'}).sort_values('email',ascending=False)
 
-        to_merge = ['gs_id','ss_id','dblp_id','primary_area','secondary_area','pub_emails','conflict_domains','q10']
+        to_merge = ['ss_id','dblp_id','primary_area','pub_emails','conflict_domains']
+        # to_merge = ['gs_id','ss_id','dblp_id','primary_area','secondary_area','pub_emails','conflict_domains','q10']
         for this_col in to_merge:
             users['merged.'+this_col] = users[this_col]
 
@@ -1108,7 +1115,7 @@ def get_loggers(config):
     
     stats_logger.info('##### START AT {} #######'.format(dt.datetime.now()))
     logger.info('##### START AT {} #######'.format(dt.datetime.now()))
-    logger.info(pformat(config))
+    logger.info(format(config))
     return logger, stats_logger
 
 if __name__ == '__main__':
