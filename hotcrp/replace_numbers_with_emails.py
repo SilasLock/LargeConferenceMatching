@@ -1,15 +1,13 @@
+#!/usr/bin/env python3
+
 import csv
 import pandas as pd
-import pickle
+import util
+
 
 # input_name should be the matching file, double check to make sure the name is right.
-input_name = "results/test_iter_0_matching.csv"
-output_name = "results/final_matching.csv"
-conversion_dict_name = "conversion_dicts/id_to_email.pkl"
 
-# Load the id_to_email dictionary into this program.
-with open(conversion_dict_name, "rb") as handle:
-    id_to_email = pickle.load(handle)
+id_to_email = util.read_json(conversion_dict_name)
 
 def id_to_email_func(x):
     return id_to_email[x]
