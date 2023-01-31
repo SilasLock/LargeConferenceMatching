@@ -4,6 +4,9 @@ from util import *
 
 from config import *
 
+write_csv_orig = write_csv
+def write_csv(x, d):
+    write_csv_orig(DATA_WITH_NONREVIEWERS + x, d)
 
 ## update PC preferences.
 ##    - create bids file <= (paper, reviewer, bid)

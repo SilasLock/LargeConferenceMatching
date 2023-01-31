@@ -19,9 +19,11 @@ AC_TAG = "ac"
 PC_TAG = "programcommittee"
 
 LCM_CONFLICTS_CSV = "conflicts.csv"           #
-LCM_REVIEWER_PROPS_CSV = "reviewer-props.csv" # 
-LCM_BIDS_CSV = "reviewer-bids.csv"            # paper, reviewer, bid
-LCM_RAW_SCORES_CSV = "raw-scores.csv"
+
+LCM_REVIEWER_PROPS_CSV = "reviewers.csv" # 
+LCM_BIDS_CSV = "bids.csv"            # paper, reviewer, bid
+LCM_RAW_SCORES_CSV = "scores.csv"
+LCM_COAUTHOR_DISTANCE_CSV = "distances.csv"
 
 
 ##
@@ -35,14 +37,13 @@ input_name = "results/test_iter_0_matching.csv"
 output_name = "results/final_matching.csv"
 conversion_dict_name = "conversion_dicts/id_to_email.pkl"
 
-input_folder = "data_pre_conversion/"
-output_folder = "data/"
+DATA_WITH_NONREVIEWERS = "data_with_nonreviewers/"
+DATA_WITH_EMAILS_FOLDER = "data_with_emails/"
+DATA_FOLDER = "data/"
 
-raw_scores_file_name = "raw-scores.csv"
-bids_file_name = "bids-hotcrp.csv"
-reviewers_file_name = "reviewers_file.csv"
-coauthor_distance_file_name = "coauthor_distance_file.csv"
+# raw_scores_file_name = "raw-scores.csv"
+# bids_file_name = "bids-hotcrp.csv"
+# reviewers_file_name = "reviewers_file.csv"
+# coauthor_distance_file_name = "coauthor_distance_file.csv"
 ID_TO_EMAIL_JSON =  "id_to_email.json"
 
-
-LCM_COAUTHOR_DISTANCE_CSV = coauthor_distance_file_name
