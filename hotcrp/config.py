@@ -45,3 +45,4 @@ coauthor_distance_file_name = "coauthor_distance_file.csv"
 ID_TO_EMAIL_JSON =  "id_to_email.json"
 
 
+LCM_COAUTHOR_DISTANCE_CSV = coauthor_distance_file_name

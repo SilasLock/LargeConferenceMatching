@@ -9,7 +9,8 @@ needs_files = [
     LCM_CONFLICTS_CSV,
     LCM_REVIEWER_PROPS_CSV,
     LCM_BIDS_CSV,
-    LCM_RAW_SCORES_CSV
+    LCM_RAW_SCORES_CSV,
+    LCM_COAUTHOR_DISTANCE_CSV
 ]
 
 print(f"NEEDS {needs_files}")
@@ -20,7 +21,8 @@ datas = [
     conflicts_data,
     reviewers_data,
     bids_data,
-    scores_data
+    scores_data,
+    distances_data
 ] = [read_csv(f) for f in needs_files]
 
 ids = [
@@ -28,7 +30,12 @@ ids = [
     reviewers_ids,
     bids_ids,
     scores_ids
-] = [{r['reviewer'] for r in data} for data in datas]
+] = [{r['reviewer'] for r in data} for data in datas[:-1]]
+
+ids += [
+    {r[f'reviewer_{i}'] for r in distances_data for i in [1,2]}
+]
+
 
 
 if len(reviewers_ids) != len(reviewers_data):
