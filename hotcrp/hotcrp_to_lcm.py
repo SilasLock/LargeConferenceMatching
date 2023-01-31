@@ -2,7 +2,7 @@
 
 from util import *
 
-
+from config import *
 
 
 ## update PC preferences.
@@ -10,24 +10,6 @@ from util import *
 ##    - create hotcrp conflicts file (paper, reviewer)
 ##    - create topic scores file (paper, reviewer, nk) <= nk is topic score.
 
-HOTCRP_PCINFO_CSV = "ec2023-pcinfo.csv"     # export from hotcrp
-HOTCRP_DATA_JSON = "ec2023-data.json"       # export from hotcrp
-HOTCRP_ALLPREFS_CSV = "ec2023-allprefs.csv" # export from hotcrp
-
-REVIEWER_EXPERIENCE_CSV = "reviewer-experience.csv" # homespun PC and publication history.
-                                                    # last,first,pc_count,paper_count,email 
-
-SS_SCORES_CSV = "semantic-scholar-scores.csv"  # from semantic scholar peer-review peer-match
-SS_CONFLICTS_CSV = "semantic-scholar-cois.csv" # from semantic scholar peer-review conflict-of-interest
-ACL_SCORES_CSV = "acl-scores.csv"              # homespum ACM similarity scores
-
-AC_TAG = "ac"
-PC_TAG = "programcommittee"
-
-LCM_CONFLICTS_CSV = "conflicts.csv"           #
-LCM_REVIEWER_PROPS_CSV = "reviewer-props.csv" # 
-LCM_BIDS_CSV = "reviewer-bids.csv"            # paper, reviewer, bid
-LCM_RAW_SCORES_CSV = "raw-scores.csv"
 
 needs_files = [
     HOTCRP_PCINFO_CSV,
