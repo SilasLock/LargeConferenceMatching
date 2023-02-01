@@ -254,7 +254,7 @@ props = [{
     'role':"AC" if "ac" in pc['tags'] else "PC",
     "seniority":get_seniority(pc),
     "conflict_papers":str(reviewer_cois.get(pc['email'],[])),
-    "region":''.join(filter(str.isalnum, pc['affiliation'])),
+    "region":''.join(filter(lambda x: str.isalnum(x) and str.isascii(x), pc['affiliation'])),
     "authored":str([])
 }
     for pc in pc_data
