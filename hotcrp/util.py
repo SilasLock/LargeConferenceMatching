@@ -27,14 +27,14 @@ def curl_csv(url,delimiter=','):
 download_csv = curl_csv
 
 def read_csv(filename,delimiter=','):
-    with open(filename,"r") as f:
+    with open(filename,"r", encoding="utf-8") as f:
         reader = csv.DictReader(f,delimiter=delimiter)
         return list(reader)
     
     
 def write_csv(filename,data):
 
-    with open(filename, 'w', newline='') as csvfile:
+    with open(filename, 'w', newline='', encoding="utf-8") as csvfile:
         fieldnames = list(data[0].keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -43,11 +43,11 @@ def write_csv(filename,data):
             writer.writerow(r)
             
 def read_json(filename):
-    with open(filename,"r") as jf:
+    with open(filename,"r", encoding="utf-8") as jf:
         return json.load(jf)
 
 def write_json(filename,data):
-    with open(filename,"w") as jf:
+    with open(filename,"w", encoding="utf-8") as jf:
         return json.dump(data,jf,indent=4)
 
 def download_txt(url):

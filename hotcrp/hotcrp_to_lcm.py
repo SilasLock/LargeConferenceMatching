@@ -21,7 +21,8 @@ needs_files = [
     REVIEWER_EXPERIENCE_CSV,
     SS_SCORES_CSV,
     SS_CONFLICTS_CSV,
-    ACL_SCORES_CSV
+    ACL_SCORES_CSV,
+    COAUTHOR_DISTANCE_FILE_NAME
 ]
 
 creates_files = [
@@ -197,7 +198,7 @@ print()
 
 # reviewer props: reviewer,role,seniority,conflicted_papers,region,authored
 
-coi_data = read_csv(LCM_CONFLICTS_CSV)
+coi_data = read_csv(DATA_WITH_NONREVIEWERS + LCM_CONFLICTS_CSV)
 
 reviewer_cois = {}
 for coi in coi_data:
@@ -261,6 +262,11 @@ props = [{
 
 write_csv(LCM_REVIEWER_PROPS_CSV,props)
 print(f"wrote reviewer props [{LCM_REVIEWER_PROPS_CSV}]")
+
+print()
+
+write_csv(LCM_COAUTHOR_DISTANCE_CSV, read_csv(COAUTHOR_DISTANCE_FILE_NAME))
+print(f"moved coauthor distance file into correct directory")
 
 print()
 

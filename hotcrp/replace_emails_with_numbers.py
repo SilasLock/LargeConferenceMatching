@@ -63,17 +63,19 @@ coauthor_distance_file.to_csv(DATA_FOLDER  + LCM_COAUTHOR_DISTANCE_CSV, index=Fa
 
 print("Converted all reviewer emails into (integer) IDs.")
 
-with open(DATA_FOLDER + "email_to_id.pkl", "wb") as handle:
-    pickle.dump(email_to_id, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# with open(DATA_FOLDER + "email_to_id.pkl", "wb") as handle:
+#     pickle.dump(email_to_id, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+util.write_json(DATA_FOLDER + EMAIL_TO_ID_JSON, email_to_id)
     
-util.write_json(DATA_FOLDER  + ID_TO_EMAIL_JSON, id_to_email)
+util.write_json(DATA_FOLDER + ID_TO_EMAIL_JSON, id_to_email)
 
 
 # Uncomment this if you ever want to load the email_to_id dictionary into a program again.
 # with open(DATA_FOLDER  + "email_to_id.pkl", "rb") as handle:
 #     same_as_email_to_dict = pickle.load(handle)
 
-print("Saved email-to-ID dictionary as a .pkl file, as well as the reverse mapping.")
+print("Saved email-to-ID dictionary as a .json file, as well as the reverse mapping.")
+# print("Saved email-to-ID dictionary as a .pkl file, as well as the reverse mapping.")
 
 print("New files placed into the " + DATA_FOLDER + " directory.")
