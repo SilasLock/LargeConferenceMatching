@@ -38,9 +38,9 @@ class MatchingILP(BaseILP):
     def create_ilp(self,lp_filename=''):
 
         #TODO: Check that every paper has reviewers and vice versa
-        
+
         logger.info('Reviewer matching objective')
-        self.add_reviewer_matching_objective() 
+        self.add_reviewer_matching_objective()
 
         logger.info('Paper capacity')
         self.add_paper_capacity_constraints()
@@ -57,26 +57,26 @@ class MatchingILP(BaseILP):
             logger.info('Coreview Constraints')
             self.add_coreview_constraints()
             logger.info('Co-author distance Objective')
-            self.add_coreview_distance_objective() 
+            self.add_coreview_distance_objective()
 
             logger.info('Seniority Objectives')
             self.add_seniority_reward()
-            
+
             logger.info('Region Objective')
             self.add_region_objective()
-            
+
             logger.info('Region Constraints and bounds')
             self.add_region_constraints_and_bounds()
 
             logger.info('Cycle Bounds')
             self.populate_bidding_cycles()
             self.add_cycle_constraints()
-            self.add_cycle_objective() 
+            self.add_cycle_objective()
 
-            self.add_paper_distribution_constraints_obj_limits(role='AC',num_papers_list=[20,30,40,50,60])
-            self.add_paper_distribution_constraints_obj_limits(role='SPC',num_papers_list=[8,12,16,20,24])
+            for (role,pen_dict) in self.config['HYPER_PARAMS']['paper_distribution_pen'].items():
+                if pen_dict:
+                    self.add_paper_distribution_constraints_obj_limits(role,pen_dict)
 
-           
         logger.info('Start writing! Phew!')
 
         self.write_to_file(lp_filename)
@@ -89,7 +89,7 @@ class MatchingILP(BaseILP):
 
     '''*********** Objective function **********'''
     def add_reviewer_matching_objective(self):
-        paper_reviewer_tuples = self.paper_reviewer_df.index.values 
+        paper_reviewer_tuples = self.paper_reviewer_df.index.values
         matching_vars = ['x{}_{}'.format(i,j) for i, j in paper_reviewer_tuples]
         self.binary.add(matching_vars)
         matching_vars_scores = [self.paper_reviewer_df.loc[(i, j)]['score'].item() for i,j in paper_reviewer_tuples]
@@ -121,9 +121,9 @@ class MatchingILP(BaseILP):
         all_eqns = []
 
         for group_name, group in self.paper_reviewer_df.reset_index().groupby(['paper','role']):
-            reviewers = group['reviewer'] 
-            pid = group_name[0]    
-            role = group_name[1]          
+            reviewers = group['reviewer']
+            pid = group_name[0]
+            role = group_name[1]
 
             reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid,x),reviewers))
             coefs = [1]*len(reviewer_vars)
@@ -140,7 +140,7 @@ class MatchingILP(BaseILP):
     '''*********** Soft constraints **********'''
     # Set coreview vars. coreview_ij at least 0. If x_ij and x_ji, then coreview_ij must be at least 1.
     def add_coreview_constraints(self):
-        #[Constraint] coreviews_jj’ >= x_ij + x_ij’ - 1 
+        #[Constraint] coreviews_jj’ >= x_ij + x_ij’ - 1
         #(for all j, j’, i, j and j’ in PC)
 
         if self.co_review_vars is None:
@@ -159,7 +159,7 @@ class MatchingILP(BaseILP):
                         var_coefs=list(zip(eqn_vars,coefs)),oper='>=',rhs=-1)
             self.constraints.add(eqn)
 
-    def add_coreview_distance_objective(self): #6      
+    def add_coreview_distance_objective(self): #6
         # Only want to penalize when no AC involved
 
         if self.co_review_vars is None:
@@ -167,7 +167,7 @@ class MatchingILP(BaseILP):
             return
 
         def add(distance_df, penalty):
-            # Take to take set over the i,j sets. Here we are taking set over  
+            # Take to take set over the i,j sets. Here we are taking set over
             reviewer_pairs_within_distance = set(distance_df.index.values)
             coreviewer_var_pairs = set((i,j) for (i, j, _) in self.co_review_vars)
             pairs_to_add = coreviewer_var_pairs.intersection(reviewer_pairs_within_distance)
@@ -183,7 +183,7 @@ class MatchingILP(BaseILP):
 
         add(distance_df.query(f'distance == 0'), self.config['HYPER_PARAMS']['coreview_dis0_pen'])
         add(distance_df.query(f'distance == 1'), self.config['HYPER_PARAMS']['coreview_dis1_pen'])
-    
+
 
     def add_seniority_reward(self):
 
@@ -217,7 +217,7 @@ class MatchingILP(BaseILP):
 
     def add_region_objective(self): #5
         #(5) Region. Reward for every additional region on a paper
-        #optimize  Reward*(reg_i)  
+        #optimize  Reward*(reg_i)
 
         region_count_vars = ['region{}'.format(pid) for pid in self.paper_reviewer_df.index.unique('paper')]
         region_reward = self.config['HYPER_PARAMS']['region_reward']
@@ -238,7 +238,7 @@ class MatchingILP(BaseILP):
             eqns.append(eqn)
 
         self.constraints.add(eqns)
-        
+
         eqns = []
         all_region_vars = []
         for region, region_df in self.reviewer_df.query("role != 'AC'").groupby('region'):
@@ -253,7 +253,7 @@ class MatchingILP(BaseILP):
                 eqns.append(eqn)
 
         self.constraints.add(eqns)
-        
+
         #add the bounds
         #reg_iR <= 1 [Bounds]
         self.bounds.add(all_region_vars,None,[1]*len(all_region_vars))
@@ -266,7 +266,7 @@ class MatchingILP(BaseILP):
                 paper_to_authors[paper].append(reviewer)
 
         self.bidding_cycles = []
-        # Only interested in high bids 
+        # Only interested in high bids
         filtered_paper_reviewer_df = self.paper_reviewer_df.query(f"bid >= {self.config['POSITIVE_BID_THR']}  and role != 'AC'")
         # Bidding cycles only occur for reviewers who are also authors - not reviewers with no submissions
         filtered_reviewer_df = self.reviewer_df.query("role != 'AC' and authored_any")
@@ -274,7 +274,7 @@ class MatchingILP(BaseILP):
         for reviewer_1, group in tqdm(filtered_paper_reviewer_df.groupby(level=1), total=filtered_paper_reviewer_df.reset_index()['reviewer'].nunique(), desc='Building bidding cycles...'):
             reviewer_1_high_bid_papers = group.reset_index()['paper'].values
             reviewer_1_authored_papers = self.reviewer_df.loc[reviewer_1]['authored']
-            for paper_1 in reviewer_1_high_bid_papers:        
+            for paper_1 in reviewer_1_high_bid_papers:
                 for reviewer_2 in paper_to_authors[paper_1]:
                     if reviewer_1 < reviewer_2:
                         # Reviewer 1 bid high on paper_1, which revivewer_2 authored. Find any "paper_2" such that paper_2 is written by reviewer_1 and reviewer_2 bid highly on it
@@ -285,9 +285,9 @@ class MatchingILP(BaseILP):
 
     def add_cycle_constraints(self): #7
         # self.bidding_cycles
-        #cycle_jj’ >= x_ij + x_i’j’ - 1 
-        #(for all i, j, j’ such that i is  written by j’ and i’ is written by j, B_ij’>0, B_i’j>0, j and j’ in SPC+PC) 
-        
+        #cycle_jj’ >= x_ij + x_i’j’ - 1
+        #(for all i, j, j’ such that i is  written by j’ and i’ is written by j, B_ij’>0, B_i’j>0, j and j’ in SPC+PC)
+
         #list of (r1,r2,p1,p2): r1 bids on p1 authored by r2 bids on p2 authored by r1
         #i.e.  list of (j, j', i, i')
         if not self.bidding_cycles:
@@ -313,15 +313,17 @@ class MatchingILP(BaseILP):
         #optimize Penalty*(cycle_
         for this_cycle in self.bidding_cycles:
             j,jp,i,ip = this_cycle
-            
+
         coefs = [self.config['HYPER_PARAMS']['cycle_pen']]*len(self.bidding_cycles)
         bidding_cycle_vars = ["cycle{}_{}".format(x[0],x[1]) for x in self.bidding_cycles]
         eqn = Equation('obj','',list(zip(bidding_cycle_vars,coefs)),None,None)
         self.objective.add(eqn)
 
-    def add_paper_distribution_constraints_obj_limits(self,role='AC',num_papers_list=[20,30,40,50]):
+    def add_paper_distribution_constraints_obj_limits(self,role,pen_dict):
 
-        pen_dict = self.config['HYPER_PARAMS']['paper_distribution_pen'][role]
+        # get keys from pen_dict itself.
+        num_papers_list = sorted(pen_dict.keys())
+        
         vars_for_objective = []
         obj_coefs = []
         #iterate over each reviewer
@@ -332,7 +334,7 @@ class MatchingILP(BaseILP):
                 slack_var = 'paper_dist{}_{}'.format(reviewer,num_papers)
                 dist_vars = ['x{}_{}'.format(paper,reviewer) for paper in papers] + [slack_var]
                 coefs = [1]*(len(dist_vars) -1 ) + [-1]
-                #add constraint 
+                #add constraint
                 eqn = Equation('cons','paper_dist{}_{}'.format(reviewer,num_papers), list(zip(dist_vars,coefs)),'<=', num_papers)
                 self.constraints.add(eqn)
 
