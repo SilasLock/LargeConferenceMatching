@@ -28,7 +28,7 @@ class ParsedSolution:
     full_cycles: list
 
 def get_violation_records(distance_df, solution_df):
-    
+
     d0_constraint_violations = 0
     d1_constraint_violations = 0
     violation_records = []
@@ -53,9 +53,9 @@ def get_violation_records(distance_df, solution_df):
     logger.info(f"Found {len(df.query('d == 0').index)} violations of co-author distance 0 and {len(df.query('d == 1').index)} of co-author distance 1")
     return df
 
-        
+
 def parse_solution(solution_file: str, paper_reviewer_df: pd.DataFrame, reviewer_df: pd.DataFrame) -> ParsedSolution:
-    
+
     tree = et.parse(solution_file)
 
     region_stats = False
@@ -107,6 +107,10 @@ def parse_solution(solution_file: str, paper_reviewer_df: pd.DataFrame, reviewer
             pid1, rid1, pid2, rid2 = search.group(1), search.group(2), search.group(3), search.group(4)
             full_cycles.append(tuple(map(int, (pid1, rid1, pid2, rid2))))
 
+    if not records:
+        print("NO RECORDS FOUND IN PROGRAM OUTPUT")
+        print("exiting without solution")
+        exit(-1)
 
     return ParsedSolution(
         df = pd.DataFrame.from_records(records),
@@ -174,11 +178,11 @@ def parse_unassigned_papers(parsed_solution, per_paper_num_indicators, k=None, f
     for paper in under_capacity_ac:
         if under_capacity_ac[paper] > 0:
             per_paper_num_indicators.loc[paper,'ac_k'] += int(k/2)
-    
+
     per_paper_num_indicators.to_csv(filename, index=True)
 
     return per_paper_num_indicators
-    
+
 def analyse_solution(config, solution_file: str, matching_data=None):
 
     results_file = solution_file.replace('.sol', '_RESULTS.txt')
@@ -236,7 +240,7 @@ def analyse_solution(config, solution_file: str, matching_data=None):
 
 
     for role, group in df.groupby('role'):
-        logger.info(f"Mean, median, min and max match score of each reviewer-paper assignment by role: {role}")    
+        logger.info(f"Mean, median, min and max match score of each reviewer-paper assignment by role: {role}")
         logger.info(group['score'].describe())
         logger.info('')
 
@@ -262,7 +266,7 @@ def analyse_solution(config, solution_file: str, matching_data=None):
         for thresh in [0.5, 0.3, 0.15, 0.000001]:
             min_scores = role_df.groupby('paper')['score'].min()
             val = (min_scores <= thresh).sum()
-            logger.info(f"Number of papers with a {role} with score <= {thresh}: {val}")    
+            logger.info(f"Number of papers with a {role} with score <= {thresh}: {val}")
     logger.info('')
 
 
@@ -300,7 +304,7 @@ def analyse_solution(config, solution_file: str, matching_data=None):
         logger.info('')
 
     for role in reviewer_df['role'].unique().tolist():
-        review_distribution(df.query(f'role == "{role}"'), role) 
+        review_distribution(df.query(f'role == "{role}"'), role)
 
 
     violation_records_df = get_violation_records(distance_df, df)
@@ -339,6 +343,3 @@ def analyse_solution(config, solution_file: str, matching_data=None):
     logger.removeHandler(handler)
 
     return parsed_solution, violation_records_df
-
-    
-
