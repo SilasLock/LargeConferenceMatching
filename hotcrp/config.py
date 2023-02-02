@@ -3,6 +3,7 @@
 ## used by hotcrp_to_lcm.py
 ##
 
+HOTCRP_EMAIL_ALIASES_CSV = "email-aliases.csv"
 
 HOTCRP_PCINFO_CSV = "ec2023-pcinfo.csv"     # export from hotcrp
 HOTCRP_DATA_JSON = "ec2023-data.json"       # export from hotcrp
@@ -14,6 +15,7 @@ REVIEWER_EXPERIENCE_CSV = "reviewer-experience.csv" # homespun PC and publicatio
 SS_SCORES_CSV = "semantic-scholar-scores.csv"  # from semantic scholar peer-review peer-match
 SS_CONFLICTS_CSV = "semantic-scholar-cois.csv" # from semantic scholar peer-review conflict-of-interest
 ACL_SCORES_CSV = "acl-scores.csv"              # homespum ACM similarity scores
+DBLP_CONFLICTS_CSV = "dblp-conflicts.csv"
 
 AC_TAG = "ac"
 PC_TAG = "programcommittee"

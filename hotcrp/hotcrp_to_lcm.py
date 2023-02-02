@@ -13,6 +13,12 @@ def write_csv(x, d):
 ##    - create hotcrp conflicts file (paper, reviewer)
 ##    - create topic scores file (paper, reviewer, nk) <= nk is topic score.
 
+try:
+    email_aliases = dict([(ea['alias'].lower(),ea['email'].lower()) for ea in read_csv(HOTCRP_EMAIL_ALIASES_CSV)])
+except:
+    print(f"failed to read email alias file [{HOTCRP_EMAIL_ALIASES_CSV}]")
+    email_aliases = {}
+
 
 needs_files = [
     HOTCRP_PCINFO_CSV,
@@ -22,6 +28,7 @@ needs_files = [
     SS_SCORES_CSV,
     SS_CONFLICTS_CSV,
     ACL_SCORES_CSV,
+    DBLP_CONFLICTS_CSV,
     COAUTHOR_DISTANCE_FILE_NAME
 ]
 
@@ -52,7 +59,7 @@ print(f"read PC info [{HOTCRP_PCINFO_CSV}]")
 
 
 # ids start from 1
-id_to_email = dict(enumerate(sorted([pc['email'] for pc in pc_data]),1))
+id_to_email = dict(enumerate(sorted([pc['email'].lower() for pc in pc_data]),1))
 email_to_id = dict([(e,i) for (i,e) in id_to_email.items()])
 
 
@@ -60,10 +67,16 @@ unknown_reviewer_emails = []
 
 def id_for_email(email):
     global unknown_reviewer_emails
+
+    email = email.lower()
+
+    if email in email_aliases:
+        email = email_aliases[email]
     
     if email in email_to_id:
         return email_to_id[email]
 
+    
     i = len(id_to_email) + 1
     id_to_email[i] = email
     email_to_id[email] = i
@@ -84,7 +97,7 @@ print(f"read submission metadata [{HOTCRP_DATA_JSON}]")
 ## ids 
 # these are strings when coming from csv files, 
 # so make sure they are strings here
-pc_ids = [pc['email'] for pc in pc_data]
+pc_ids = [pc['email'].lower() for pc in pc_data]
 paper_ids = [str(p['pid']) for p in paper_data]
 
 print(f"  - {len(pc_ids)} PC members\n  - {len(paper_ids)} submissions\n")
@@ -97,7 +110,7 @@ print(f"read preference data [{HOTCRP_ALLPREFS_CSV}]")
 
 # positive bids, 1..20 with 1 as willing.
 bid_data = {
-    (p['paper'],p['email']):int(p['preference']) 
+    (p['paper'],p['email'].lower()):int(p['preference']) 
     for p in pref_data 
     if p['preference']
 }
@@ -138,7 +151,7 @@ print()
 # semantic-scholar-scores.csv: reviewerId,reviewerExternalId,submissionId,submissionExternalId,score,reason
 try:
     ss_score_data = {
-        (ss['submissionExternalId'],ss['reviewerExternalId'])
+        (ss['submissionExternalId'],ss['reviewerExternalId'].lower())
         :
         round(float(ss['score']),2)
         for ss in read_csv(SS_SCORES_CSV)
@@ -152,7 +165,7 @@ except:
 # acl-scores.csv: ,paperid,reviewer_email,similarity
 try:
     acl_score_data = {
-        (acl['paperid'],acl['reviewer_email'])
+        (acl['paperid'],acl['reviewer_email'].lower())
         :
         round(float(acl['similarity']),2)
         for acl in read_csv(ACL_SCORES_CSV)
@@ -166,7 +179,7 @@ except:
 
 # from HOTCRP_ALLPREFS
 topic_score_data = {
-    (p['paper'],p['email']):int(p['topic_score']) 
+    (p['paper'],p['email'].lower()):int(p['topic_score']) 
     for p in pref_data
     if p['topic_score']
 }
@@ -207,6 +220,20 @@ except:
     print(f"could not read SS conflict file [{SS_CONFLICTS_CSV}]")
     ss_coi_data = set()
 
+# paper,author_email,reviewer,conflict
+try:
+    dblp_coi_data = {
+        (d['paper'],d['reviewer'].lower())
+        for d in read_csv(DBLP_CONFLICTS_CSV) if d['conflict']
+    }
+    print(f"read DBLP conflict file [{DBLP_CONFLICTS_CSV}]")
+except:
+    print(f"could not read DBLP conflict file [{DBLP_CONFLICTS_CSV}]")
+    dblp_coi_data = set()
+
+
+
+    
 hotcrp_coi_data = {
     (p['paper'],p['email']) for p in pref_data if p['conflict'] == "conflict"
 }
@@ -214,8 +241,8 @@ hotcrp_coi_data = {
 conflicts = [{
     'paper':pid,
     'reviewer':id_for_email(rid),
-    'reviewer_email':rid
-} for (pid,rid) in hotcrp_coi_data | ss_coi_data]
+    'reviewer_email':rid.lower()
+} for (pid,rid) in hotcrp_coi_data | ss_coi_data | dblp_coi_data]
 
 
 write_csv(LCM_CONFLICTS_CSV,conflicts)
@@ -245,6 +272,9 @@ except:
     print(f"could not read reviewer experience data [{REVIEWER_EXPERIENCE_CSV}]")
     seniority_data = []
 
+for s in seniority_data:
+    s['email'] = s['email'].lower()
+    
 def get_fullname(record):
     return "{first} {last}".format(**record)
     
@@ -285,7 +315,7 @@ props = [{
     "conflict_papers":str(reviewer_cois.get(pc['email'],[])),
     "region":''.join(filter(lambda x: str.isalnum(x) and str.isascii(x), pc['affiliation'])),
     "authored":str([]),
-    "reviewer_email":pc['email']
+    "reviewer_email":pc['email'].lower()
 }
     for pc in pc_data
 ]
@@ -301,8 +331,8 @@ try:
         "reviewer_1":       id_for_email(cd['reviewer_1']),
         "reviewer_2":       id_for_email(cd['reviewer_2']),
         "distance":         cd['distance'],
-        "reviewer_1_email": cd['reviewer_1'],
-        "reviewer_2_email": cd['reviewer_2']
+        "reviewer_1_email": cd['reviewer_1'].lower(),
+        "reviewer_2_email": cd['reviewer_2'].lower()
     } for cd in read_csv(COAUTHOR_DISTANCE_FILE_NAME)]
 except:
     print(f"could not read SS conflict file [{SS_CONFLICTS_CSV}]")
@@ -316,7 +346,7 @@ if coauthor_data:
 print()
 
 if unknown_reviewer_emails:
-    print(f"found {len(unknown_reviewer_emails)} emails:")
+    print(f"found {len(unknown_reviewer_emails)} non-program committee emails:")
     pprint(sorted(unknown_reviewer_emails))
 
 print("done")
