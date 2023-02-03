@@ -47,14 +47,13 @@ def get_scores_old(config, scores):
     return scores
 
 def get_scores(config, scores):
-    # Just a copy of how the old code acquired the scores variable. Hopefully this works.
     scores['is_positive'] = scores['bid'] >= config['POSITIVE_BID_THR']
-    bid2exponent = {'bid':[0.05,1,2,4,6],'exponent': config['HYPER_PARAMS']['bid_inverse_exponents']}
-    #[1/0.05, 1.0, 1.0/2, 1.0/4.0 , 1.0/6.0]}
-    bid2exponent = pd.DataFrame(bid2exponent)
-    # I'm VERY skeptical of this step. It looks like it's doing a *dictionary mapping* from raw bids to these ones from the config file.
-    # What about all the bids which take on floating point numbers not in that dictionary??
-    scores = scores.reset_index().merge(bid2exponent,how='left',on='bid').set_index(['paper','reviewer'])
+    # Just a copy of how the old code acquired the scores variable. Hopefully this works.
+    #    bid2exponent = {'bid':[0.05,1,2,4,6],'exponent': config['HYPER_PARAMS']['bid_inverse_exponents']}
+        #[1/0.05, 1.0, 1.0/2, 1.0/4.0 , 1.0/6.0]}
+    #    bid2exponent = pd.DataFrame(bid2exponent)
+    #    scores = scores.reset_index().merge(bid2exponent,how='left',on='bid').set_index(['paper','reviewer'])
+    scores['exponent'] = scores['bid']
 
     # Grab the data that contains labels for use in training our model.
     regressionData = scores[["ntpms", "nacl", "nk", "label"]]
