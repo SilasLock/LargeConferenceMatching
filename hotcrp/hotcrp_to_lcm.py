@@ -19,6 +19,10 @@ except:
     print(f"failed to read email alias file [{HOTCRP_EMAIL_ALIASES_CSV}]")
     email_aliases = {}
 
+def email(e):
+    e = e.lower()
+    return email_aliases.get(e,e)
+
 
 needs_files = [
     HOTCRP_PCINFO_CSV,
@@ -29,14 +33,16 @@ needs_files = [
     SS_CONFLICTS_CSV,
     ACL_SCORES_CSV,
     DBLP_CONFLICTS_CSV,
-    COAUTHOR_DISTANCE_FILE_NAME
+    COAUTHOR_DISTANCE_FILE_NAME,
+    TC_SCORES_RAW_CSV
 ]
 
 creates_files = [
     LCM_CONFLICTS_CSV,
     LCM_REVIEWER_PROPS_CSV,
     LCM_BIDS_CSV,
-    LCM_RAW_SCORES_CSV
+    LCM_RAW_SCORES_CSV,
+    TC_SCORES_CSV
 ]
 
 print(f"NEEDS {needs_files}")
@@ -63,24 +69,20 @@ id_to_email = dict(enumerate(sorted([pc['email'].lower() for pc in pc_data]),1))
 email_to_id = dict([(e,i) for (i,e) in id_to_email.items()])
 
 
-unknown_reviewer_emails = []
+unknown_reviewer_emails = set()
 
-def id_for_email(email):
+def id_for_email(e):
     global unknown_reviewer_emails
 
-    email = email.lower()
-
-    if email in email_aliases:
-        email = email_aliases[email]
+    e = email(e)
     
-    if email in email_to_id:
-        return email_to_id[email]
-
+    if e in email_to_id:
+        return email_to_id[e]
     
     i = len(id_to_email) + 1
-    id_to_email[i] = email
+    id_to_email[i] = e
     email_to_id[email] = i
-    unknown_reviewer_emails += [email]
+    unknown_reviewer_emails.add(e)
     
     return i
 
@@ -146,7 +148,32 @@ write_csv(LCM_BIDS_CSV,bids)
 print(f"wrote bids to [{LCM_BIDS_CSV}]")
 print()
 
+
 ## WRITE RAW SCORES
+try:
+    tc_raw_data = read_csv(TC_SCORES_RAW_CSV)
+    print(f"read track chair scores [{TC_SCORES_RAW_CSV}]")
+except:
+    print(f"could not read trach chair scores file [{TC_SCORES_RAW_CSV}]")
+    tc_raw_data = []
+    
+    
+tc_data = [{
+    'paper':d['Paper'].strip(),
+    'reviewer':email(d[f"Email {i}"].strip()),
+    'score':d[f"Score {i}"].strip()
+    } for d in tc_raw_data for i in "12345"]
+
+
+write_csv(TC_SCORES_CSV,tc_data)
+print(f"wrote track chair scores [{TC_SCORES_CSV}]")
+
+
+tc_labels = {(
+    tc['paper'],
+    tc['reviewer']
+) : tc['score'] for tc in tc_data}
+
 
 # semantic-scholar-scores.csv: reviewerId,reviewerExternalId,submissionId,submissionExternalId,score,reason
 try:
@@ -191,12 +218,24 @@ def bounded_or_nothing(lookup,pid,rid):
         
     return bounded(lookup[pid,rid],0,1)
 
+def process_label(l):
+    if not l:
+        return l
+    try:
+        label = float(l)
+        return label
+    except:
+        print(f"   - unable to parse label [{label}] as float")
+        return ""
+    
+
 raw_scores = [{
     "paper":pid,
     "reviewer":id_for_email(rid),
     "ntpms":bounded_or_nothing(ss_score_data,pid,rid),
     "nacl":bounded_or_nothing(acl_score_data,pid,rid),
     "nk": bounded((20+topic_score_data.get((pid,rid),0)) / 40,0,1),
+    "label": process_label(tc_labels.get((pid,rid),'')),
     "reviewer_email":rid
 }
     for pid in paper_ids
@@ -347,6 +386,6 @@ print()
 
 if unknown_reviewer_emails:
     print(f"found {len(unknown_reviewer_emails)} non-program committee emails:")
-    pprint(sorted(unknown_reviewer_emails))
+    pprint(unknown_reviewer_emails)
 
 print("done")
