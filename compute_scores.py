@@ -61,11 +61,10 @@ def get_scores(config, scores):
     # ^^ This is what the old code did when trying to map bids to bid_inverse_exponents.
 
     # Here's some new code for adjusting the (not-taking-values-in-a-finite-set) bids to the bid_inverse_exponents values.
-    scores['is_positive'] = scores['bid'] >= config['POSITIVE_BID_THR']
     # bid2exponent = {'bid':[0.05,1,2,4,6],'exponent': config['HYPER_PARAMS']['bid_inverse_exponents']}
-    scores["exponent"] = scores["bid"].transform(lambda x : massage_bids(config['HYPER_PARAMS']['bid_inverse_exponents'], x))
-    scores = scores.reset_index().set_index(['paper','reviewer'])
-
+    # scores["exponent"] = scores["bid"].transform(lambda x : massage_bids(config['HYPER_PARAMS']['bid_inverse_exponents'], x))
+    scores['exponent'] = scores['bid']
+    # scores = scores.reset_index().set_index(['paper','reviewer'])
 
 
     # Grab the data that contains labels for use in training our model.
@@ -127,12 +126,13 @@ def get_scores(config, scores):
     # Now perform the final, wonky exponentiation step.
     scores["score"] = scores["scores_base"]**(1.0 / scores["exponent"])
 
-    scores.to_csv("data/TESTING.csv")
+    scores.to_csv("data/testing_dump.csv")
 
-    print(str(allThree_model.intercept_) + ", " + str(allThree_model.coef_))
-    print(str(justTPMS_model.intercept_) + ", " + str(justTPMS_model.coef_))
-    print(str(justACL_model.intercept_) + ", " + str(justACL_model.coef_))
-    print(str(noTPMSorACL_model.intercept_) + ", " + str(noTPMSorACL_model.coef_))
+    print("The following are the regression coefficients:")
+    print("\t" + str(allThree_model.intercept_) + ", " + str(allThree_model.coef_))
+    print("\t" + str(justTPMS_model.intercept_) + ", " + str(justTPMS_model.coef_))
+    print("\t" + str(justACL_model.intercept_) + ", " + str(justACL_model.coef_))
+    print("\t" + str(noTPMSorACL_model.intercept_) + ", " + str(noTPMSorACL_model.coef_))
     # print(justTPMS_model.coef_)
     # print(justACL_model.coef_)
     # print(noTPMSorACL_model.coef_)
