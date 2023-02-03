@@ -7,10 +7,11 @@ logger = logging.getLogger(__name__)
 
 def get_scores_old(config, scores):
     scores['is_positive'] = scores['bid'] >= config['POSITIVE_BID_THR']
-    bid2exponent = {'bid':[0.05,1,2,4,6],'exponent': config['HYPER_PARAMS']['bid_inverse_exponents']}
+#    bid2exponent = {'bid':[0.05,1,2,4,6],'exponent': config['HYPER_PARAMS']['bid_inverse_exponents']}
     #[1/0.05, 1.0, 1.0/2, 1.0/4.0 , 1.0/6.0]}
-    bid2exponent = pd.DataFrame(bid2exponent)
-    scores = scores.reset_index().merge(bid2exponent,how='left',on='bid').set_index(['paper','reviewer'])
+#    bid2exponent = pd.DataFrame(bid2exponent)
+#    scores = scores.reset_index().merge(bid2exponent,how='left',on='bid').set_index(['paper','reviewer'])
+    scores['exponent'] = scores['bid']
     epsilon = 0.0000001
 
     #match score: avg of ntpms and nacl
@@ -48,6 +49,7 @@ def get_scores_old(config, scores):
 
 
 def get_scores(config, scores):
+    scores['is_positive'] = scores['bid'] >= config['POSITIVE_BID_THR']
     # Just a copy of how the old code acquired the scores variable. Hopefully this works.
     # scores['is_positive'] = scores['bid'] >= config['POSITIVE_BID_THR']
     # bid2exponent = {'bid':[0.05,1,2,4,6],'exponent': config['HYPER_PARAMS']['bid_inverse_exponents']}
