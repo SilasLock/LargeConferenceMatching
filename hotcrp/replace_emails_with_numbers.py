@@ -67,7 +67,7 @@ print("Converted all reviewer emails into (integer) IDs.")
 #     pickle.dump(email_to_id, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 util.write_json(DATA_FOLDER + EMAIL_TO_ID_JSON, email_to_id)
-    
+
 util.write_json(DATA_FOLDER + ID_TO_EMAIL_JSON, id_to_email)
 
 
