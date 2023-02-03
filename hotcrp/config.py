@@ -17,6 +17,7 @@ SS_CONFLICTS_CSV = "semantic-scholar-cois.csv" # from semantic scholar peer-revi
 ACL_SCORES_CSV = "acl-scores.csv"              # homespum ACM similarity scores
 DBLP_CONFLICTS_CSV = "dblp-conflicts.csv"
 
+TC_SCORES_RAW_CSV = "tc-scores-raw.csv"
 TC_SCORES_CSV = "tc-scores.csv"
 
 AC_TAG = "ac"
