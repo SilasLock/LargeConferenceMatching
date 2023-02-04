@@ -127,6 +127,9 @@ bid_data = {
     if p['preference']
 }
 
+
+# bid: float (0.05,1,2,4,6: not willing , not entered, in a pinch, willing, eager)
+
 def get_bid(pid,rid):
     
     bid = bid_data.get((pid,rid),0)
@@ -137,11 +140,11 @@ def get_bid(pid,rid):
     if bid == 0:
         return 1
     
-    # round 1..20 to 3-6
+    # round 1..20 to 2-6
     if bid > 20:
         bid = 20
      
-    return round((bid - 1) * (6-3) / (20-1) + 3,2)       
+    return round((bid - 1) * (6-2) / (20-1) + 2,2)       
     
 
 bids = [{
