@@ -3,6 +3,8 @@
 ## used by hotcrp_to_lcm.py
 ##
 
+COMMITTEE_AUX_CSV = "committee.csv"
+
 HOTCRP_EMAIL_ALIASES_CSV = "email-aliases.csv"
 
 HOTCRP_PCINFO_CSV = "ec2023-pcinfo.csv"     # export from hotcrp
