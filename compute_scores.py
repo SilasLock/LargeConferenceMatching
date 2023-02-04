@@ -61,7 +61,10 @@ def weight(score, bid, track, nk):
 
     nbid = bid / 6
 
-    return round((match_quality * nbid),3)
+#    w = match_quality * nbid
+    w = match_quality**(1/bid)
+
+    return round(w,3)
 
 
 def get_scores(config, scores):
