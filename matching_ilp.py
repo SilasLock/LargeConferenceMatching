@@ -106,13 +106,25 @@ class MatchingILP(BaseILP):
             papers = self.paper_reviewer_df.query(f'reviewer == {rid}').index.get_level_values('paper')
             paper_vars = list(map(lambda x: 'x{}_{}'.format(x,rid),papers))
             coefs = [1]*len(paper_vars)
-            oper = '<='
-            rhs = self.config['HYPER_PARAMS'][f'max_papers_per_reviewer_{role}']
 
-            eqn = Equation(eqn_type='cons',name='reviewer_capacity_{}_{}'.format(rid, role),
-                  var_coefs=list(zip(paper_vars,coefs)),oper=oper,
-                  rhs=rhs)
-            all_eqns.append(eqn)
+            oper_max = '<='
+            rhs_max = self.config['HYPER_PARAMS'][f'max_papers_per_reviewer_{role}']
+            eqn_max = Equation(eqn_type='cons',name='reviewer_capacity_{}_{}'.format(rid, role),
+                  var_coefs=list(zip(paper_vars,coefs)),oper=oper_max,
+                  rhs=rhs_max)
+
+            all_eqns.append(eqn_max)
+
+
+            rhs_min = self.config['HYPER_PARAMS'].get(f'min_papers_per_reviewer_{role}',0)
+
+            if rhs_min:
+                oper_min = '>='
+                eqn_min = Equation(eqn_type='cons',name='reviewer_minimum_{}_{}'.format(rid, role),
+                    var_coefs=list(zip(paper_vars,coefs)),oper=oper_min,
+                    rhs=rhs_min)
+
+                all_eqns.append(eqn_min)
 
         self.constraints.add(all_eqns)
 
@@ -323,7 +335,7 @@ class MatchingILP(BaseILP):
 
         # get keys from pen_dict itself.
         num_papers_list = sorted(pen_dict.keys())
-        
+
         vars_for_objective = []
         obj_coefs = []
         #iterate over each reviewer
