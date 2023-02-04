@@ -50,6 +50,7 @@ def logistic(q,q0=0.5,k=1):
     return 1.0/(1.0 + 2.7**(k * (q0 - q)))
 
 def weight(score, bid, track, nk):
+
     track_multiplier = 0.3 if not track else 1.0 # downweight if not in track
 
     # map nk = .5 (zero topic match) to 0.3
@@ -60,7 +61,7 @@ def weight(score, bid, track, nk):
 
     nbid = bid / 6
 
-    return (match_quality * nbid)
+    return round((match_quality * nbid),3)
 
 
 def get_scores(config, scores):
@@ -140,17 +141,19 @@ def get_scores(config, scores):
 
     # Now perform the final, wonky exponentiation step.
 #    scores["score"] = scores["scores_base"]**(1.0 / scores["exponent"])
-    scores['score'] = scores.apply(lambda score: weight(score.score,score.bid,score.track,score.nk))
+    scores['score'] = scores.apply(lambda row: weight(row['scores_base'],row['bid'],row['track'],row['nk']),axis=1)
 
-
+    result = scores.query("bid >= 3.5").head(10)
+    logger.info(result)
 
     scores.to_csv("data/testing_dump.csv")
 
-    print("The following are the regression coefficients:")
-    print("\t" + str(allThree_model.intercept_) + ", " + str(allThree_model.coef_))
-    print("\t" + str(justTPMS_model.intercept_) + ", " + str(justTPMS_model.coef_))
-    print("\t" + str(justACL_model.intercept_) + ", " + str(justACL_model.coef_))
-    print("\t" + str(noTPMSorACL_model.intercept_) + ", " + str(noTPMSorACL_model.coef_))
+    logger.info("The following are the regression coefficients:")
+    logger.info("\t" + str(allThree_model.intercept_) + ", " + str(allThree_model.coef_))
+    logger.info("\t" + str(justTPMS_model.intercept_) + ", " + str(justTPMS_model.coef_))
+    logger.info("\t" + str(justACL_model.intercept_) + ", " + str(justACL_model.coef_))
+    logger.info("\t" + str(noTPMSorACL_model.intercept_) + ", " + str(noTPMSorACL_model.coef_))
+
     # print(justTPMS_model.coef_)
     # print(justACL_model.coef_)
     # print(noTPMSorACL_model.coef_)
@@ -158,7 +161,7 @@ def get_scores(config, scores):
 
 def compute_scores(config=None):
 
-    scores = pd.read_csv(config['RAW_SCORES_FILE'],usecols=["paper","reviewer","ntpms","nacl","nk", "label"]).set_index(['paper','reviewer'])
+    scores = pd.read_csv(config['RAW_SCORES_FILE'],usecols=["paper","reviewer","ntpms","nacl","nk", "label","track"]).set_index(['paper','reviewer'])
     bids = pd.read_csv(config['BIDS_FILE'],usecols=["paper","reviewer","bid"]).set_index(['paper','reviewer'])
     scores = scores.join(bids)
     scores['bid'] = scores['bid'].fillna(config['DEFAULT_BID_WHEN_NO_BIDS'])
