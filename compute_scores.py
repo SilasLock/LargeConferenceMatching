@@ -46,6 +46,21 @@ def get_scores_old(config, scores):
     scores.loc[condn_ll,'score'] = (scores['nk'].loc[condn_ll]**(1.0/scores['exponent'].loc[condn_ll])).clip(upper=lower_thr)
     return scores
 
+def logistic(q,q0=0.5,k=1):
+    return 1.0/(1.0 + 2.7**(k * (q0 - q)))
+
+def weight(score, bid, track, nk):
+    track_multiplier = 0.3 if not track else 1.0 # downweight if not in track
+
+    # map nk = .5 (zero topic match) to 0.3
+    topic_multiplier = logistic(nk,.6,10) # nk^(log(.3) / log (.5))
+    score_multiplier = logistic(score,.5,10)
+
+    match_quality = track_multiplier * topic_multiplier * score_multiplier
+
+    nbid = bid / 6
+
+    return (match_quality * nbid)
 
 
 def get_scores(config, scores):
@@ -124,7 +139,10 @@ def get_scores(config, scores):
     scores["scores_base"] = scores["scores_base"].transform(lambda x: min(1.0, max(0.0, x)))
 
     # Now perform the final, wonky exponentiation step.
-    scores["score"] = scores["scores_base"]**(1.0 / scores["exponent"])
+#    scores["score"] = scores["scores_base"]**(1.0 / scores["exponent"])
+    scores['score'] = scores.apply(lambda score: weight(score.score,score.bid,score.track,score.nk))
+
+
 
     scores.to_csv("data/testing_dump.csv")
 
