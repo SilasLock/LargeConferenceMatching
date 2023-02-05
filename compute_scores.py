@@ -142,6 +142,26 @@ def get_scores(config, scores):
     # scores["scores_base"] = min(1.0, max(0.0, scores["scores_base"]))
     scores["scores_base"] = scores["scores_base"].transform(lambda x: min(1.0, max(0.0, x)))
 
+
+
+
+    use_as_ia = config['HYPER_PARAMS'].get('bid_as_inverse_exponent',False)
+
+
+    def weight(score, bid, track, nk):
+
+        track_multiplier = 0.3 if not track else 1.0 # downweight if not in track
+
+        # map nk = .5 (zero topic match) to 0.3
+        topic_multiplier = logistic(nk,.6,10) # nk^(log(.3) / log (.5))
+        score_multiplier = logistic(score,.5,10)
+
+        match_quality = track_multiplier * topic_multiplier * score_multiplier
+
+        w = match_quality**(1/bid) if use_as_ia else match_quality * (bid/6.0)
+
+        return round(w,3)
+
     # Now perform the final, wonky exponentiation step.
 #    scores["score"] = scores["scores_base"]**(1.0 / scores["exponent"])
     scores['score'] = scores.apply(lambda row: weight(row['scores_base'],row['bid'],row['track'],row['nk']),axis=1)
