@@ -60,7 +60,7 @@ def setup_logging(filename):
         }
     )
 
-def main(output_files_prefix='itertest', 
+def main(output_files_prefix='itertest',
         config=None,
         num_coreview_vars=None,
         master_conflicts_file=None,
@@ -208,7 +208,7 @@ def main(output_files_prefix='itertest',
             logger.info(f'Abstol:{abstol}')
             logger.info(f'Relative MIP Gap:{relative_mip_gap}')
             solution_file = solve(ilp_file, warm_start=warm_start,abstol=abstol, relative_mip_gap=relative_mip_gap)
-        
+
         # Step 3: Analyze solution
         logger.info(f"Step 3: Parse and Analyze solution")
         parsed_solution, violation_df = analyse_solution(config, solution_file, matching_data=matching_data)

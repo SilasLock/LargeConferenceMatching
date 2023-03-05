@@ -108,8 +108,8 @@ def parse_solution(solution_file: str, paper_reviewer_df: pd.DataFrame, reviewer
             full_cycles.append(tuple(map(int, (pid1, rid1, pid2, rid2))))
 
     if not records:
-        print("NO RECORDS FOUND IN PROGRAM OUTPUT")
-        print("exiting without solution")
+        logger.info("NO RECORDS FOUND IN PROGRAM OUTPUT")
+        logger.info("exiting without solution")
         exit(-1)
 
     return ParsedSolution(

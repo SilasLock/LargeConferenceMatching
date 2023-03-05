@@ -34,7 +34,8 @@ needs_files = [
     ACL_SCORES_CSV,
     DBLP_CONFLICTS_CSV,
     COAUTHOR_DISTANCE_FILE_NAME,
-    TC_SCORES_RAW_CSV
+    TC_SCORES_RAW_CSV,
+    COMMITTEE_AUX_CSV
 ]
 
 creates_files = [
@@ -62,6 +63,14 @@ pc_data = [
     if AC_TAG in tags or PC_TAG in tags
 ]
 print(f"read PC info [{HOTCRP_PCINFO_CSV}]")
+
+try:
+    pc_aux_data = read_csv(COMMITTEE_AUX_CSV)
+    print(f"read auxiliary committee data [{COMMITTEE_AUX_CSV}]")
+    email_to_track = {email(pc['Email']):set(pc['Track'].split(", ")) for pc in pc_aux_data}
+except:
+    print(f"could not read auxiliary committee data [{COMMITTEE_AUX_CSV}]")
+    email_to_track = {}
 
 
 # ids start from 1
@@ -94,6 +103,7 @@ def email_for_id(i):
 paper_data = [r for r in read_json(HOTCRP_DATA_JSON) if r['status'] == "submitted"]
 print(f"read submission metadata [{HOTCRP_DATA_JSON}]")
 
+paper_to_track = {str(r['pid']):r['track'] for r in paper_data}
 
 
 ## ids 
@@ -117,6 +127,9 @@ bid_data = {
     if p['preference']
 }
 
+
+# bid: float (0.05,1,2,4,6: not willing , not entered, in a pinch, willing, eager)
+
 def get_bid(pid,rid):
     
     bid = bid_data.get((pid,rid),0)
@@ -127,11 +140,11 @@ def get_bid(pid,rid):
     if bid == 0:
         return 1
     
-    # round 1..20 to 3-6
+    # round 1..20 to 2-6
     if bid > 20:
         bid = 20
      
-    return round((bid - 1) * (6-3) / (20-1) + 3,2)       
+    return round((bid - 1) * (6-2) / (20-1) + 2,2)       
     
 
 bids = [{
@@ -227,6 +240,18 @@ def process_label(l):
     except:
         print(f"   - unable to parse label [{label}] as float")
         return ""
+
+def track_match(pid,rid):
+    track = paper_to_track.get(pid,"")
+    if not track:
+        print(f"  - no track found for paper {pid}")
+        return 0
+    tracks = email_to_track.get(rid,"")
+    if not tracks:
+        print(f"  - no tracks found for reviewer {rid}")
+        return 0
+
+    return 1 if track in tracks else 0
     
 
 raw_scores = [{
@@ -235,6 +260,7 @@ raw_scores = [{
     "ntpms":bounded_or_nothing(ss_score_data,pid,rid),
     "nacl":bounded_or_nothing(acl_score_data,pid,rid),
     "nk": bounded((20+topic_score_data.get((pid,rid),0)) / 40,0,1),
+    "track": track_match(pid,rid),
     "label": process_label(tc_labels.get((pid,rid),'')),
     "reviewer_email":rid
 }
