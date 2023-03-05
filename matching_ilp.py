@@ -48,6 +48,10 @@ class MatchingILP(BaseILP):
         logger.info('Reviewer capacity')
         self.add_reviewer_capacity_constraints()
 
+        # This last one is the EC-specific constraint we added--that we need at least one computer scientist per paper.
+        logger.info('CS expertise')
+        self.add_computer_science_constraints()
+
         if self.fixed_variable_solution_file is not None:
             logger.info('Setting fixed assignements')
             self.set_fixed_vars()
@@ -132,6 +136,29 @@ class MatchingILP(BaseILP):
 
             eqn_ac = Equation(eqn_type='cons',name='paper_capacity_{}_{}'.format(role,pid),
                   var_coefs=list(zip(reviewer_vars,coefs)),oper=oper,
+                  rhs=rhs)
+            all_eqns.append(eqn_ac)
+
+        self.constraints.add(all_eqns)
+
+    # Require a certain number of computer scientists per paper
+    def add_computer_science_constraints(self):
+        all_eqns = []
+
+        for group_name, group in self.paper_reviewer_df.reset_index().groupby('paper'):
+            reviewers = group['reviewer']
+            # We're assuming that the new reviewer data has a column called "computer_scientist", which has a Boolean for whether they qualify as one.
+            computer_science_expertise = group['computer_scientist']
+            pid = group_name
+
+            reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid, x), reviewers))
+            coefs = list(map(lambda x: x, computer_science_expertise))
+            oper = ">="
+            # Needs to be at least one (1) computer scientist per paper.
+            rhs = 1
+
+            eqn_ac = Equation(eqn_type='cons',name='cs_expertise_{}'.format(pid),
+                  var_coefs=list(zip(reviewer_vars,coefs)), oper=oper,
                   rhs=rhs)
             all_eqns.append(eqn_ac)
 
