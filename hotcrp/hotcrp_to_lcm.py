@@ -21,6 +21,8 @@ except:
 
 def email(e):
     e = e.lower()
+    if "@" not in e:
+        print(f"GOT NON-EMAIL [{e}]")
     return email_aliases.get(e,e)
 
 
@@ -28,6 +30,7 @@ needs_files = [
     HOTCRP_PCINFO_CSV,
     HOTCRP_DATA_JSON,
     HOTCRP_ALLPREFS_CSV,
+    HOTCRP_PCASSIGNMENT_CSV,
     REVIEWER_EXPERIENCE_CSV,
     SS_SCORES_CSV,
     SS_CONFLICTS_CSV,
@@ -43,6 +46,7 @@ creates_files = [
     LCM_REVIEWER_PROPS_CSV,
     LCM_BIDS_CSV,
     LCM_RAW_SCORES_CSV,
+    LCM_FIXED_SOLUTION_CSV,
     TC_SCORES_CSV
 ]
 
@@ -173,9 +177,14 @@ except:
     
 tc_data = [{
     'paper':d['Paper'].strip(),
-    'reviewer':email(d[f"Email {i}"].strip()),
+    'reviewer':email(e),
     'score':d[f"Score {i}"].strip()
-    } for d in tc_raw_data for i in "12345"]
+    }
+           for d in tc_raw_data
+           for i in "12345"
+           for e in [d[f"Email {i}"].strip()]
+           if e
+]
 
 
 write_csv(TC_SCORES_CSV,tc_data)
@@ -277,7 +286,7 @@ print()
 # reviewerId,reviewerExternalId,submissionId,submissionExternalId,score,reason
 try:
     ss_coi_data = {
-        (ss['submissionExternalId'],ss['reviewerExternalId'])
+        (ss['submissionExternalId'],email(ss['reviewerExternalId']))
         for ss in read_csv(SS_CONFLICTS_CSV) if ss['score']
     }
     print(f"read SS conflict file [{SS_CONFLICTS_CSV}]")
@@ -288,7 +297,7 @@ except:
 # paper,author_email,reviewer,conflict
 try:
     dblp_coi_data = {
-        (d['paper'],d['reviewer'].lower())
+        (d['paper'],email(d['reviewer'].lower()))
         for d in read_csv(DBLP_CONFLICTS_CSV) if d['conflict']
     }
     print(f"read DBLP conflict file [{DBLP_CONFLICTS_CSV}]")
@@ -296,18 +305,19 @@ except:
     print(f"could not read DBLP conflict file [{DBLP_CONFLICTS_CSV}]")
     dblp_coi_data = set()
 
-
-
-    
 hotcrp_coi_data = {
     (p['paper'],p['email']) for p in pref_data if p['conflict'] == "conflict"
 }
 
+
+
 conflicts = [{
     'paper':pid,
-    'reviewer':id_for_email(rid),
-    'reviewer_email':rid.lower()
+    'reviewer':id_for_email(email(rid.lower())),
+    'reviewer_email':email(rid.lower())
 } for (pid,rid) in hotcrp_coi_data | ss_coi_data | dblp_coi_data]
+
+
 
 
 write_csv(LCM_CONFLICTS_CSV,conflicts)
@@ -319,7 +329,7 @@ print()
 
 # reviewer props: reviewer,role,seniority,conflicted_papers,region,authored
 
-coi_data = read_csv(DATA_WITH_NONREVIEWERS + LCM_CONFLICTS_CSV)
+coi_data = conflicts
 
 reviewer_cois = {}
 for coi in coi_data:
@@ -377,7 +387,7 @@ props = [{
     'reviewer':id_for_email(pc['email']),
     'role':"AC" if "ac" in pc['tags'] else "PC",
     "seniority":get_seniority(pc),
-    "conflict_papers":str(reviewer_cois.get(pc['email'],[])),
+    "conflict_papers":str(reviewer_cois.get(id_for_email(pc['email']),[])),
     "region":''.join(filter(lambda x: str.isalnum(x) and str.isascii(x), pc['affiliation'])),
     "authored":str([]),
     "reviewer_email":pc['email'].lower()
@@ -399,8 +409,10 @@ try:
         "reviewer_1_email": cd['reviewer_1'].lower(),
         "reviewer_2_email": cd['reviewer_2'].lower()
     } for cd in read_csv(COAUTHOR_DISTANCE_FILE_NAME)]
+    print(f"read coauthor distance file [{COAUTHOR_DISTANCE_FILE_NAME}]")
+    
 except:
-    print(f"could not read SS conflict file [{SS_CONFLICTS_CSV}]")
+    print(f"could not read coauthor distance file [{COAUTHOR_DISTANCE_FILE_NAME}]")
     coauthor_data = []
     
 
@@ -408,6 +420,27 @@ if coauthor_data:
     write_csv(LCM_COAUTHOR_DISTANCE_CSV, coauthor_data)
     print(f"moved coauthor distance [{COAUTHOR_DISTANCE_FILE_NAME}] to [{LCM_COAUTHOR_DISTANCE_CSV}]")
 
+print()
+
+# current matching
+
+try:
+    assignment_data = [{
+        "reviewer":       id_for_email(email(ass['email'])),
+        "paper":          ass['paper'],
+        "reviewer_email": email(ass['email']),
+    } for ass in read_csv(HOTCRP_PCASSIGNMENT_CSV) if ass['action'] != 'clearreview']
+    print(f"read PC assignment file [{HOTCRP_PCASSIGNMENT_CSV}]")
+except:
+    print(f"could not read PC assignment file [{HOTCRP_PCASSIGNMENT_CSV}]")
+    assignment_data = []
+    
+
+if assignment_data:
+    write_csv(LCM_FIXED_SOLUTION_CSV, assignment_data)
+    print(f"wrote fixed solution file [{LCM_FIXED_SOLUTION_CSV}]")
+
+    
 print()
 
 if unknown_reviewer_emails:
