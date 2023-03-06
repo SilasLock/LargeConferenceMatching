@@ -11,10 +11,14 @@ HOTCRP_PCINFO_CSV = "ec2023-pcinfo.csv"     # export from hotcrp
 HOTCRP_DATA_JSON = "ec2023-data.json"       # export from hotcrp
 HOTCRP_ALLPREFS_CSV = "ec2023-allprefs.csv" # export from hotcrp
 HOTCRP_PCASSIGNMENT_CSV = "ec2023-pcassignments.csv" # export from hotcrp
+HOTCRP_REVIEWS_CSV = "ec2023-reviews.csv"
 
 REVIEWER_EXPERIENCE_CSV = "reviewer-experience.csv" # homespun PC and publication history.
                                                     # last,first,pc_count,paper_count,email 
 
+CS_REVIEWERS_CSV = "cs-reviewers.csv"          # email addresses of CS reviewers.
+
+                                                    
 SS_SCORES_CSV = "semantic-scholar-scores.csv"  # from semantic scholar peer-review peer-match
 SS_CONFLICTS_CSV = "semantic-scholar-cois.csv" # from semantic scholar peer-review conflict-of-interest
 ACL_SCORES_CSV = "acl-scores.csv"              # homespum ACM similarity scores

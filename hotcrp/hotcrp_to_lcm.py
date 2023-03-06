@@ -31,6 +31,7 @@ needs_files = [
     HOTCRP_DATA_JSON,
     HOTCRP_ALLPREFS_CSV,
     HOTCRP_PCASSIGNMENT_CSV,
+    HOTCRP_REVIEWS_CSV,
     REVIEWER_EXPERIENCE_CSV,
     SS_SCORES_CSV,
     SS_CONFLICTS_CSV,
@@ -38,7 +39,8 @@ needs_files = [
     DBLP_CONFLICTS_CSV,
     COAUTHOR_DISTANCE_FILE_NAME,
     TC_SCORES_RAW_CSV,
-    COMMITTEE_AUX_CSV
+    COMMITTEE_AUX_CSV,
+    CS_REVIEWERS_CSV
 ]
 
 creates_files = [
@@ -381,7 +383,13 @@ def get_seniority(pc):
         seniority = 3
         
     return seniority
-        
+
+try:
+    cs_reviewers = {email(r['email']) for r in read_csv(CS_REVIEWERS_CSV)}
+    print(f"read CS reviewers file [{CS_REVIEWERS_CSV}]")
+except Exception as e:
+    print(f"failed to read CS reviewers file [{CS_REVIEWERS_CSV}]")
+    cs_reviewers = set()
     
 props = [{
     'reviewer':id_for_email(pc['email']),
@@ -390,13 +398,15 @@ props = [{
     "conflict_papers":str(reviewer_cois.get(id_for_email(pc['email']),[])),
     "region":''.join(filter(lambda x: str.isalnum(x) and str.isascii(x), pc['affiliation'])),
     "authored":str([]),
-    "reviewer_email":pc['email'].lower()
+    "computer_scientist": 1 if pc['email'] in cs_reviewers else 0,
+    "reviewer_email":email(pc['email'])
 }
     for pc in pc_data
 ]
 
 write_csv(LCM_REVIEWER_PROPS_CSV,props)
 print(f"wrote reviewer props [{LCM_REVIEWER_PROPS_CSV}]")
+known_reviewers = {p['reviewer_email'] for p in props}
 
 print()
 
@@ -429,12 +439,14 @@ try:
         "reviewer":       id_for_email(email(ass['email'])),
         "paper":          ass['paper'],
         "reviewer_email": email(ass['email']),
-    } for ass in read_csv(HOTCRP_PCASSIGNMENT_CSV) if ass['action'] != 'clearreview']
+    } for ass in read_csv(HOTCRP_REVIEWS_CSV)]
     print(f"read PC assignment file [{HOTCRP_PCASSIGNMENT_CSV}]")
 except:
     print(f"could not read PC assignment file [{HOTCRP_PCASSIGNMENT_CSV}]")
     assignment_data = []
-    
+
+assignment_reviewers = {a['reviewer_email'] for a in assignment_data}
+print(f"found {assignment_reviewers} reviewers in assignment")
 
 if assignment_data:
     write_csv(LCM_FIXED_SOLUTION_CSV, assignment_data)
