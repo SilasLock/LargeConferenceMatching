@@ -109,4 +109,7 @@ def create_paper_reviewer_df(config=None,
     paper_reviewer_df = paper_reviewer_df.join(bids_df)
     paper_reviewer_df['bid'] = paper_reviewer_df['bid'].fillna(config['DEFAULT_BID_WHEN_NO_BIDS'])
 
+    # Add computer scientists.
+    paper_reviewer_df = paper_reviewer_df.join(reviewer_df[["computer_scientist"]])
+
     return paper_reviewer_df
