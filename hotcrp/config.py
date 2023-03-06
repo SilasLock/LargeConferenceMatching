@@ -10,6 +10,7 @@ HOTCRP_EMAIL_ALIASES_CSV = "email-aliases.csv"
 HOTCRP_PCINFO_CSV = "ec2023-pcinfo.csv"     # export from hotcrp
 HOTCRP_DATA_JSON = "ec2023-data.json"       # export from hotcrp
 HOTCRP_ALLPREFS_CSV = "ec2023-allprefs.csv" # export from hotcrp
+HOTCRP_PCASSIGNMENT_CSV = "ec2023-pcassignments.csv" # export from hotcrp
 
 REVIEWER_EXPERIENCE_CSV = "reviewer-experience.csv" # homespun PC and publication history.
                                                     # last,first,pc_count,paper_count,email 
@@ -31,6 +32,7 @@ LCM_REVIEWER_PROPS_CSV = "reviewers.csv" #
 LCM_BIDS_CSV = "bids.csv"            # paper, reviewer, bid
 LCM_RAW_SCORES_CSV = "scores.csv"
 LCM_COAUTHOR_DISTANCE_CSV = "distances.csv"
+LCM_FIXED_SOLUTION_CSV = "fixed-solution.csv"
 
 
 ##
