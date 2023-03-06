@@ -390,7 +390,7 @@ class MatchingILP(BaseILP):
         logger.info("Fixing previous variable assignments from %s..." % self.fixed_variable_solution_file)
         df = pd.read_csv(self.fixed_variable_solution_file).drop_duplicates()
         pairs = list(zip(df.paper,df.reviewer))
-        real_reviewers = set(reviewer_df.reviewer)
+        real_reviewers = set(self.reviewer_df.reviewer)
         eqns = []
         dropped = []
         for (pid,rid) in pairs:
@@ -401,5 +401,6 @@ class MatchingILP(BaseILP):
             coef = 1
             eqn = Equation('cons','fix_assigned_x{}_{}'.format(pid,rid),[(match_var, coef)],"=",1)
             eqns.append(eqn)
-        logger.info(f"dropped {len(dropped)} external reviwers from fixed matching.")
+        if dropped:
+            logger.info(f"dropped {len(dropped)} external reviwers from fixed matching.")
         self.constraints.add(eqns)
