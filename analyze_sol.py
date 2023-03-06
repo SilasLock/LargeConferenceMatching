@@ -75,7 +75,11 @@ def parse_solution(solution_file: str, paper_reviewer_df: pd.DataFrame, reviewer
             # Small value in case cplex returns some stupid numbers close to 0
             if name.startswith('x') and float(value) > 1e-5:
                 paper, reviewer = (int(x) for x in name.replace('x', '').split('_'))
-                score = paper_reviewer_df.loc[(paper, reviewer)]['score'].item()
+                try:
+                    score = paper_reviewer_df.loc[(paper, reviewer)]['score'].item()
+                except:
+                    logger.info(f"failed to look up match score for {(paper, reviewer)}")
+                    score = 0
                 r_info = reviewer_df.query(f'reviewer == {reviewer}')
                 record = dict(
                     paper = paper,
