@@ -194,6 +194,19 @@ print(f"ALL UNHAPPY PAPERS: {unhappy_papers}")
 print(f"NEED REVIEWERS PAPERS: {need_reviewers}")
 
 
+computer_scientist_ids = {int(r["reviewer"]) for r in reviewers_data if (1 == r["computer_scientist"])}
+matched_paper_count = len({int(r["paper"]) for r in results_data})
+good = {int(r["paper"]) for r in results_data if int(r["reviewer"]) in computer_scientist_ids}
+print("We want all " + str(matched_paper_count) + " papers (the number being reviewed) to each have at least one computer scientist reviewing them.")
+print("Total papers reviewed = " + str(matched_paper_count))
+print("Total papers reviewed by at least 1 computer scientist = " + str(len(good)))
+if (matched_paper_count == len(good)):
+    print("\tThese are the same value! Good work.")
+else:
+    print("\tWARNING! These are not the same value! That means there's probably some paper being reviewed by no one with CS expertise!")
+
+
+
 assignment = [
     {
         'paper':r['paper'],
