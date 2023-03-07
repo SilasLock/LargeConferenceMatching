@@ -77,18 +77,29 @@ def parse_solution(solution_file: str, paper_reviewer_df: pd.DataFrame, reviewer
                 paper, reviewer = (int(x) for x in name.replace('x', '').split('_'))
                 try:
                     score = paper_reviewer_df.loc[(paper, reviewer)]['score'].item()
+
+                    r_info = reviewer_df.query(f'reviewer == {reviewer}')
+
+                    record = dict(
+                        paper = paper,
+                        reviewer = reviewer,
+                        score = score,
+                        role = r_info['role'].item(),
+                        seniority = r_info['seniority'].item(),
+                        region = r_info['region'].item()
+                    )
                 except:
                     logger.info(f"failed to look up match score for {(paper, reviewer)}")
                     score = 0
-                r_info = reviewer_df.query(f'reviewer == {reviewer}')
-                record = dict(
-                    paper = paper,
-                    reviewer = reviewer,
-                    score = score,
-                    role = r_info['role'].item(),
-                    seniority = r_info['seniority'].item(),
-                    region = r_info['region'].item()
-                )
+                    record = dict(
+                        paper = paper,
+                        reviewer = reviewer,
+                        score = score,
+                        role = "PC",
+                        seniority = 0,
+                        region = "external-reviewer"
+                    )
+
                 records.append(record)
             elif re.match(r'^region\d+$', name):
                 region_stats = True
