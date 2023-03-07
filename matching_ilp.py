@@ -36,6 +36,11 @@ class MatchingILP(BaseILP):
         if fixed_variable_solution_file:
             df = pd.read_csv(self.fixed_variable_solution_file).drop_duplicates()
             self.fixed_solution_pairs = list(zip(df.paper,df.reviewer))
+            self.membership = {
+                role:set(reviewer_df.query(f'role == "{role}"').index)
+                for role in ["PC","SPC","AC"]
+            }
+            self.all_committee = set(reviewers_df.index)
         self.output_files_prefix= output_files_prefix
 
     def create_ilp(self,lp_filename=''):
@@ -161,7 +166,13 @@ class MatchingILP(BaseILP):
             ## add missing reviewers from fixed solution
             if self.fixed_solution_pairs:
                 tracked_pairs = {(int(pid),int(r)) for r in reviewers}
-                fixed_pairs = {(int(p),int(r)) for (p,r) in self.fixed_solution_pairs if int(p) == int(pid)}
+                fixed_pairs = {
+                    (int(p),int(r))
+                    for (p,r) in self.fixed_solution_pairs
+                    if int(p) == int(pid)
+                    and (int(r) in self.membership[role]                  # make sure it's the right role
+                    or role == "PC" and int(r) not in self.all_committee) # external reviewers treated as PC
+                }
                 diff_pairs = fixed_pairs - tracked_pairs
                 missing_reviewers = [r for (p,r) in diff_pairs]
 
