@@ -33,6 +33,9 @@ class MatchingILP(BaseILP):
         self.co_review_vars = co_review_vars
         self.bidding_cycles = None
         self.fixed_variable_solution_file = fixed_variable_solution_file
+        if fixed_variable_solution_file:
+            df = pd.read_csv(self.fixed_variable_solution_file).drop_duplicates()
+            self.fixed_solution_pairs = list(zip(df.paper,df.reviewer))
         self.output_files_prefix= output_files_prefix
 
     def create_ilp(self,lp_filename=''):
@@ -107,7 +110,22 @@ class MatchingILP(BaseILP):
 
         for rid, role in tqdm(self.reviewer_df['role'].items(), total=self.reviewer_df.index.size, desc="Building reviewer capacity constraints..."):
 
-            papers = self.paper_reviewer_df.query(f'reviewer == {rid}').index.get_level_values('paper')
+            papers = list(self.paper_reviewer_df.query(f'reviewer == {rid}').index.get_level_values('paper'))
+
+
+
+            ## add missing papers from fixed solution, if any
+            if self.fixed_solution_pairs:
+                tracked_pairs = {(p,rid) for p in papers}
+                fixed_pairs = {(p,r) for (p,r) in self.fixed_solution_pairs if str(r) == str(rid)}
+                diff_pairs = fixed_pairs - tracked_pairs
+                missing_papers = [p for (p,r) in diff_pairs]
+
+                if missing_papers:
+                    logger.info(f"for reviewer {rid} adding missing papers {missing_papers}")
+
+                papers += missing_papers
+
             paper_vars = list(map(lambda x: 'x{}_{}'.format(x,rid),papers))
             coefs = [1]*len(paper_vars)
 
@@ -121,7 +139,6 @@ class MatchingILP(BaseILP):
 
 
             rhs_min = self.config['HYPER_PARAMS'].get(f'min_papers_per_reviewer_{role}',0)
-
             if rhs_min:
                 oper_min = '>='
                 eqn_min = Equation(eqn_type='cons',name='reviewer_minimum_{}_{}'.format(rid, role),
@@ -137,9 +154,21 @@ class MatchingILP(BaseILP):
         all_eqns = []
 
         for group_name, group in self.paper_reviewer_df.reset_index().groupby(['paper','role']):
-            reviewers = group['reviewer']
+            reviewers = list(group['reviewer'])
             pid = group_name[0]
             role = group_name[1]
+
+            ## add missing reviewers from fixed solution
+            if self.fixed_solution_pairs:
+                tracked_pairs = {(pid,r) for r in reviewers}
+                fixed_pairs = {(p,r) for (p,r) in self.fixed_solution_pairs if str(p) == str(pid)}
+                diff_pairs = fixed_pairs - tracked_pairs
+                missing_reviewers = [r for (p,r) in diff_pairs]
+
+                if missing_reviewers:
+                    logger.info(f"for papers {pid} adding missing reviewers {missing_reviewers}")
+
+                reviewers += missing_reviewers
 
             reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid,x),reviewers))
             coefs = [1]*len(reviewer_vars)
@@ -388,19 +417,12 @@ class MatchingILP(BaseILP):
 
     def set_fixed_vars(self):
         logger.info("Fixing previous variable assignments from %s..." % self.fixed_variable_solution_file)
-        df = pd.read_csv(self.fixed_variable_solution_file).drop_duplicates()
-        pairs = list(zip(df.paper,df.reviewer))
-        real_reviewers = set(self.reviewer_df.index)
+        pairs = self.fixed_solution_pairs
         eqns = []
         dropped = []
         for (pid,rid) in pairs:
-            if rid not in real_reviewers:
-                dropped += [(pid,rid)]
-                continue
             match_var = 'x{}_{}'.format(pid,rid)
             coef = 1
             eqn = Equation('cons','fix_assigned_x{}_{}'.format(pid,rid),[(match_var, coef)],"=",1)
             eqns.append(eqn)
-        if dropped:
-            logger.info(f"dropped {len(dropped)} external reviwers from fixed matching.")
         self.constraints.add(eqns)
