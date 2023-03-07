@@ -116,8 +116,8 @@ class MatchingILP(BaseILP):
 
             ## add missing papers from fixed solution, if any
             if self.fixed_solution_pairs:
-                tracked_pairs = {(p,rid) for p in papers}
-                fixed_pairs = {(p,r) for (p,r) in self.fixed_solution_pairs if str(r) == str(rid)}
+                tracked_pairs = {(int(p),int(rid)) for p in papers}
+                fixed_pairs = {(int(p),int(r)) for (p,r) in self.fixed_solution_pairs if int(r) == int(rid)}
                 diff_pairs = fixed_pairs - tracked_pairs
                 missing_papers = [p for (p,r) in diff_pairs]
 
@@ -160,8 +160,8 @@ class MatchingILP(BaseILP):
 
             ## add missing reviewers from fixed solution
             if self.fixed_solution_pairs:
-                tracked_pairs = {(pid,r) for r in reviewers}
-                fixed_pairs = {(p,r) for (p,r) in self.fixed_solution_pairs if str(p) == str(pid)}
+                tracked_pairs = {(int(pid),int(r)) for r in reviewers}
+                fixed_pairs = {(int(p),int(r)) for (p,r) in self.fixed_solution_pairs if int(p) == int(pid)}
                 diff_pairs = fixed_pairs - tracked_pairs
                 missing_reviewers = [r for (p,r) in diff_pairs]
 
