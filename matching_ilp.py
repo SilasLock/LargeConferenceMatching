@@ -40,7 +40,7 @@ class MatchingILP(BaseILP):
                 role:set(reviewer_df.query(f'role == "{role}"').index)
                 for role in ["PC","SPC","AC"]
             }
-            self.all_committee = set(reviewers_df.index)
+            self.all_committee = set(reviewer_df.index)
         self.output_files_prefix= output_files_prefix
 
     def create_ilp(self,lp_filename=''):
