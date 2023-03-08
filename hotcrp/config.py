@@ -37,7 +37,7 @@ LCM_BIDS_CSV = "bids.csv"            # paper, reviewer, bid
 LCM_RAW_SCORES_CSV = "scores.csv"
 LCM_COAUTHOR_DISTANCE_CSV = "distances.csv"
 LCM_FIXED_SOLUTION_CSV = "fixed-solution.csv"
-
+LCM_REJECTED_PAPERS_CSV = "rejected-papers.csv"
 
 ##
 ## used by
