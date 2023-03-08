@@ -129,12 +129,13 @@ class MatchingILP(BaseILP):
             if self.fixed_solution_pairs:
                 tracked_pairs = {(int(p),int(rid)) for p in papers}
                 fixed_pairs = {(int(p),int(r)) for (p,r) in self.fixed_solution_pairs if int(r) == int(rid)}
-                if rhs_max < len(fixed_pairs):
-                    # fixed assignment is more than allowed in constraints; increase constraints.
-                    logger.info(f"reviewer {rid} matched to {len(fixed_pairs)} > {rhs_max}, increasing capacity")
-                    rhs_max = len(fixed_pairs)
                 diff_pairs = fixed_pairs - tracked_pairs
                 missing_papers = [p for (p,r) in diff_pairs]
+
+                # fixed assignment is more than allowed in constraints; increase constraints.
+                if rhs_max < len(fixed_pairs):
+                    logger.info(f"reviewer {rid} matched to {len(fixed_pairs)} > {rhs_max} papers, increasing capacity")
+                    rhs_max = len(fixed_pairs)
 
                 if missing_papers:
                     logger.info(f"for reviewer {rid} adding missing papers {missing_papers}")
@@ -190,9 +191,10 @@ class MatchingILP(BaseILP):
                 diff_pairs = fixed_pairs - tracked_pairs
                 missing_reviewers = [r for (p,r) in diff_pairs]
 
+                ## if fixed-solution has more matches than RHS, increase RHS.
                 if rhs < len(fixed_pairs):
                     # fixed assignment is more than allowed in constraints; increase constraints.
-                    logger.info(f"reviewer {rid} matched to {len(fixed_pairs)} > {rhs}, increasing capacity")
+                    logger.info(f"paper {pid} matched to {len(fixed_pairs)} > {rhs} reviewers, increasing capacity")
                     rhs = len(fixed_pairs)
 
                 if missing_reviewers:
