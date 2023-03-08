@@ -194,7 +194,8 @@ class MatchingILP(BaseILP):
                 ## if fixed-solution has more matches than RHS, increase RHS.
                 if rhs < len(fixed_pairs):
                     # fixed assignment is more than allowed in constraints; increase constraints.
-                    logger.info(f"paper {pid} matched to {len(fixed_pairs)} > {rhs} reviewers, increasing capacity")
+                    if rhs != 0: # do not print for rejected papers
+                        logger.info(f"paper {pid} matched to {len(fixed_pairs)} > {rhs} reviewers, increasing capacity")
                     rhs = len(fixed_pairs)
 
                 if missing_reviewers:
