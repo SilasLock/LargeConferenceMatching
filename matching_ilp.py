@@ -220,9 +220,10 @@ class MatchingILP(BaseILP):
 
             cs_p = f'cs_{pid}'
 
-            reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid, x), reviewers))
-            cs_vars = reviewer_vars.append(cs_p)
-            coefs = list(map(lambda x: x, computer_science_expertise)).append(-1)
+            cs_vars = list(map(lambda x: 'x{}_{}'.format(pid, x), reviewers))
+            cs_vars.append(cs_p)
+            coefs = list(map(lambda x: x, computer_science_expertise))
+            coefs.append(-1)
             # cs_p can't be more than the computer scientists assigned to the paper.
             eqn_ac = Equation(eqn_type='cons',name='cs_sum_over_cs_{}'.format(pid),
                   var_coefs=list(zip(cs_vars, coefs)), oper=">=",
