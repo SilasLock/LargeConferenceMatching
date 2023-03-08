@@ -32,6 +32,7 @@ needs_files = [
     HOTCRP_ALLPREFS_CSV,
     HOTCRP_PCASSIGNMENT_CSV,
     HOTCRP_REVIEWS_CSV,
+    HOTCRP_LOG_CSV,
     REVIEWER_EXPERIENCE_CSV,
     SS_SCORES_CSV,
     SS_CONFLICTS_CSV,
@@ -449,19 +450,38 @@ print()
 
 # current matching
 
+
+
+## read external reviewers from log
+
 try:
+        
+    review_accepted_data = [l for l in read_csv(HOTCRP_LOG_CSV) if "accepted" in l['action'] and "Review" in l['action']]
+    print(f"read log file for accepted external reviews [{HOTCRP_LOG_CSV}]")
+    external_reviewers = {email(l['email']) for l in review_accepted_data}
+        
+except:
+        
+    print(f"failed to read log file for accepted external reviews [{HOTCRP_LOG_CSV}]")
+    review_accepted_data = []
+    external_reviewers = {}
+
+    
+## read PC/AC assignment
+try:
+    
     assignment_data = [{
         "reviewer":       id_for_email(email(ass['email'])),
         "paper":          ass['paper'],
         "reviewer_email": email(ass['email']),
-    } for ass in read_csv(HOTCRP_REVIEWS_CSV)]
+    } for ass in (read_csv(HOTCRP_PCASSIGNMENT_CSV) + review_accepted_data) if ass['action'] != 'clearreview']
     print(f"read PC assignment file [{HOTCRP_PCASSIGNMENT_CSV}]")
 except:
     print(f"could not read PC assignment file [{HOTCRP_PCASSIGNMENT_CSV}]")
     assignment_data = []
 
 assignment_reviewers = {a['reviewer_email'] for a in assignment_data}
-print(f"found {len(assignment_reviewers)} reviewers in assignment")
+print(f"found {len(assignment_reviewers)} reviewers in assignment ({len(external_reviewers)} external)")
 
 if assignment_data:
     write_csv(LCM_FIXED_SOLUTION_CSV, assignment_data)
@@ -470,8 +490,13 @@ if assignment_data:
     
 print()
 
+
+unknown_reviewer_emails -= external_reviewers
+
 if unknown_reviewer_emails:
     print(f"found {len(unknown_reviewer_emails)} non-program committee emails:")
     pprint(unknown_reviewer_emails)
+
+print()
 
 print("done")

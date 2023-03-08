@@ -12,6 +12,7 @@ HOTCRP_DATA_JSON = "ec2023-data.json"       # export from hotcrp
 HOTCRP_ALLPREFS_CSV = "ec2023-allprefs.csv" # export from hotcrp
 HOTCRP_PCASSIGNMENT_CSV = "ec2023-pcassignments.csv" # export from hotcrp
 HOTCRP_REVIEWS_CSV = "ec2023-reviews.csv"
+HOTCRP_LOG_CSV = "ec2023-log.csv"
 
 REVIEWER_EXPERIENCE_CSV = "reviewer-experience.csv" # homespun PC and publication history.
                                                     # last,first,pc_count,paper_count,email 
