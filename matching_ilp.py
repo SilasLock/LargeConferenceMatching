@@ -42,6 +42,11 @@ class MatchingILP(BaseILP):
             }
             self.all_committee = set(reviewer_df.index)
         self.output_files_prefix= output_files_prefix
+        self.rejected_papers = set()
+        if "REJECTED_PAPERS_FILE" in config:
+            if config["REJECTED_PAPERS_FILE"]:
+                # Produce a Python set that contains all paper IDs that have been rejected.
+                self.rejected_papers = pd.read_csv(config["REJECTED_PAPERS_FILE"])["paper"].agg(set)
 
     def create_ilp(self,lp_filename=''):
 
@@ -180,11 +185,16 @@ class MatchingILP(BaseILP):
                     logger.info(f"for papers {pid} adding missing reviewers {missing_reviewers}")
 
                 reviewers += missing_reviewers
+                if pid in self.rejected_papers:
+                    # If this paper is rejected, we only want to put a constraint on the reviewers who aren't already assigned to it.
+                    pairs_not_in_fixed_matching = tracked_pairs - fixed_pairs
+                    reviewers = [r for (p,r) in pairs_not_in_fixed_matching]
 
             reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid,x),reviewers))
             coefs = [1]*len(reviewer_vars)
             oper = '<=' if self.config['HYPER_PARAMS']['relax_paper_capacity'] else '='
-            rhs = self.config['HYPER_PARAMS'][f'max_reviews_per_paper_{role}']
+            # If this paper is rejected, make sure no one new is assigned to it. Otherwise, cap the reviewers at max_reviewers_per_paper_{role}.
+            rhs = self.config['HYPER_PARAMS'][f'max_reviews_per_paper_{role}'] if pid not in self.rejected_papers else 0
 
             eqn_ac = Equation(eqn_type='cons',name='paper_capacity_{}_{}'.format(role,pid),
                   var_coefs=list(zip(reviewer_vars,coefs)),oper=oper,
@@ -193,7 +203,7 @@ class MatchingILP(BaseILP):
 
         self.constraints.add(all_eqns)
 
-    # Require a certain number of computer scientists per paper
+    # Require a certain number of computer scientists per paper (now a soft constraint)
     def add_computer_science_constraints(self):
         all_eqns = []
 
@@ -203,16 +213,21 @@ class MatchingILP(BaseILP):
             computer_science_expertise = group['computer_scientist']
             pid = group_name
 
-            reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid, x), reviewers))
-            coefs = list(map(lambda x: x, computer_science_expertise))
-            oper = ">="
-            # Needs to be at least one (1) computer scientist per paper.
-            rhs = 1
+            cs_p = f'cs_{pid}'
 
+            reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid, x), reviewers))
+            cs_vars = reviewer_vars.append(cs_p)
+            coefs = list(map(lambda x: x, computer_science_expertise)).append(-1)
+            # cs_p can't be more than the computer scientists assigned to the paper.
+            eqn_ac = Equation(eqn_type='cons',name='cs_sum_over_cs_{}'.format(pid),
+                  var_coefs=list(zip(cs_vars, coefs)), oper=">=",
+                  rhs=0)
+            # cs_p can't be more than 1.
             eqn_ac = Equation(eqn_type='cons',name='cs_expertise_{}'.format(pid),
-                  var_coefs=list(zip(reviewer_vars,coefs)), oper=oper,
-                  rhs=rhs)
+                  var_coefs=[(cs_p, 1)], oper="<=",
+                  rhs=1)
             all_eqns.append(eqn_ac)
+            self.objective.add(Equation('obj', '', [(cs_p, 10)], None, None))
 
         self.constraints.add(all_eqns)
 
