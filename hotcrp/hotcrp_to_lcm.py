@@ -49,6 +49,7 @@ creates_files = [
     LCM_BIDS_CSV,
     LCM_RAW_SCORES_CSV,
     LCM_FIXED_SOLUTION_CSV,
+    LCM_REJECTED_PAPERS_CSV,
     TC_SCORES_CSV
 ]
 
@@ -106,8 +107,22 @@ def email_for_id(i):
 
 
 ## submitted papers
-paper_data = [r for r in read_json(HOTCRP_DATA_JSON) if r['status'] == "submitted"]
+paper_data = [r for r in read_json(HOTCRP_DATA_JSON) if r.get('submitted',False)]
 print(f"read submission metadata [{HOTCRP_DATA_JSON}]")
+
+print()
+
+rejected_papers = [{'paper':p['pid']} for p in paper_data if p['status'] == 'rejected']
+
+if rejected_papers:
+    print(f"writing rejected papers file {LCM_REJECTED_PAPERS_CSV}")
+    write_csv(LCM_REJECTED_PAPERS_CSV,rejected_papers)
+else:
+    print("no rejected papers")
+
+
+print()
+
 
 paper_to_track = {str(r['pid']):r['track'] for r in paper_data}
 
@@ -446,7 +461,7 @@ except:
     assignment_data = []
 
 assignment_reviewers = {a['reviewer_email'] for a in assignment_data}
-print(f"found {assignment_reviewers} reviewers in assignment")
+print(f"found {len(assignment_reviewers)} reviewers in assignment")
 
 if assignment_data:
     write_csv(LCM_FIXED_SOLUTION_CSV, assignment_data)
