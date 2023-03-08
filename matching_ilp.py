@@ -47,6 +47,7 @@ class MatchingILP(BaseILP):
             if config["REJECTED_PAPERS_FILE"]:
                 # Produce a Python set that contains all paper IDs that have been rejected.
                 self.rejected_papers = pd.read_csv(config["REJECTED_PAPERS_FILE"])["paper"].agg(set)
+                logger.info(f"Found {len(self.rejected_papers)} rejected papers to which we won't add new reviewers.")
 
     def create_ilp(self,lp_filename=''):
 
@@ -163,6 +164,7 @@ class MatchingILP(BaseILP):
     def add_paper_capacity_constraints(self): #1
         all_eqns = []
 
+        rejection_record = []
         for group_name, group in self.paper_reviewer_df.reset_index().groupby(['paper','role']):
             reviewers = list(group['reviewer'])
             pid = group_name[0]
@@ -189,6 +191,8 @@ class MatchingILP(BaseILP):
                     # If this paper is rejected, we only want to put a constraint on the reviewers who aren't already assigned to it.
                     pairs_not_in_fixed_matching = tracked_pairs - fixed_pairs
                     reviewers = [r for (p,r) in pairs_not_in_fixed_matching]
+                    logger.info(f"Paper {pid} was rejected, so we won't add new reviewers for it.")
+                    rejection_record.append(pid)
 
             reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid,x),reviewers))
             coefs = [1]*len(reviewer_vars)
@@ -201,6 +205,7 @@ class MatchingILP(BaseILP):
                   rhs=rhs)
             all_eqns.append(eqn_ac)
 
+        logger.info(f"We counted {len(rejection_record)} (paper, role) pairs with a rejected paper, so we should have found 3 times as many such pairs as rejected papers.")
         self.constraints.add(all_eqns)
 
     # Require a certain number of computer scientists per paper (now a soft constraint)
