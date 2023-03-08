@@ -123,12 +123,16 @@ class MatchingILP(BaseILP):
 
             papers = list(self.paper_reviewer_df.query(f'reviewer == {rid}').index.get_level_values('paper'))
 
-
+            rhs_max = self.config['HYPER_PARAMS'][f'max_papers_per_reviewer_{role}']
 
             ## add missing papers from fixed solution, if any
             if self.fixed_solution_pairs:
                 tracked_pairs = {(int(p),int(rid)) for p in papers}
                 fixed_pairs = {(int(p),int(r)) for (p,r) in self.fixed_solution_pairs if int(r) == int(rid)}
+                if rhs_max < len(fixed_pairs):
+                    # fixed assignment is more than allowed in constraints; increase constraints.
+                    logger.info(f"reviewer {rid} matched to {len(fixed_pairs)} > {rhs_max}, increasing capacity")
+                    rhs_max = len(fixed_pairs)
                 diff_pairs = fixed_pairs - tracked_pairs
                 missing_papers = [p for (p,r) in diff_pairs]
 
@@ -141,7 +145,6 @@ class MatchingILP(BaseILP):
             coefs = [1]*len(paper_vars)
 
             oper_max = '<='
-            rhs_max = self.config['HYPER_PARAMS'][f'max_papers_per_reviewer_{role}']
             eqn_max = Equation(eqn_type='cons',name='reviewer_capacity_{}_{}'.format(rid, role),
                   var_coefs=list(zip(paper_vars,coefs)),oper=oper_max,
                   rhs=rhs_max)
@@ -170,6 +173,10 @@ class MatchingILP(BaseILP):
             pid = group_name[0]
             role = group_name[1]
 
+
+            # If this paper is rejected, make sure no one new is assigned to it. Otherwise, cap the reviewers at max_reviewers_per_paper_{role}.
+            rhs = self.config['HYPER_PARAMS'][f'max_reviews_per_paper_{role}'] if pid not in self.rejected_papers else 0
+
             ## add missing reviewers from fixed solution
             if self.fixed_solution_pairs:
                 tracked_pairs = {(int(pid),int(r)) for r in reviewers}
@@ -183,22 +190,26 @@ class MatchingILP(BaseILP):
                 diff_pairs = fixed_pairs - tracked_pairs
                 missing_reviewers = [r for (p,r) in diff_pairs]
 
+                if rhs < len(fixed_pairs):
+                    # fixed assignment is more than allowed in constraints; increase constraints.
+                    logger.info(f"reviewer {rid} matched to {len(fixed_pairs)} > {rhs}, increasing capacity")
+                    rhs = len(fixed_pairs)
+
                 if missing_reviewers:
                     logger.info(f"for papers {pid} adding missing reviewers {missing_reviewers}")
 
                 reviewers += missing_reviewers
-                if pid in self.rejected_papers:
-                    # If this paper is rejected, we only want to put a constraint on the reviewers who aren't already assigned to it.
-                    pairs_not_in_fixed_matching = tracked_pairs - fixed_pairs
-                    reviewers = [r for (p,r) in pairs_not_in_fixed_matching]
-                    logger.info(f"Paper {pid} was rejected, so we won't add new reviewers for it.")
-                    rejection_record.append(pid)
+                ### THIS IS UNNEEDED NOW SINCE WE INCREASE RHS TO FIXED AMOUNT
+                # if pid in self.rejected_papers:
+                #     # If this paper is rejected, we only want to put a constraint on the reviewers who aren't already assigned to it.
+                #     pairs_not_in_fixed_matching = tracked_pairs - fixed_pairs
+                #     reviewers = [r for (p,r) in pairs_not_in_fixed_matching]
+                #     logger.info(f"Paper {pid} was rejected, so we won't add new reviewers for it.")
+                #     rejection_record.append(pid)
 
             reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid,x),reviewers))
             coefs = [1]*len(reviewer_vars)
             oper = '<=' if self.config['HYPER_PARAMS']['relax_paper_capacity'] else '='
-            # If this paper is rejected, make sure no one new is assigned to it. Otherwise, cap the reviewers at max_reviewers_per_paper_{role}.
-            rhs = self.config['HYPER_PARAMS'][f'max_reviews_per_paper_{role}'] if pid not in self.rejected_papers else 0
 
             eqn_ac = Equation(eqn_type='cons',name='paper_capacity_{}_{}'.format(role,pid),
                   var_coefs=list(zip(reviewer_vars,coefs)),oper=oper,
