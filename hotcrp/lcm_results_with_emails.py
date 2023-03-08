@@ -194,7 +194,7 @@ print(f"ALL UNHAPPY PAPERS: {unhappy_papers}")
 print(f"NEED REVIEWERS PAPERS: {need_reviewers}")
 
 
-computer_scientist_ids = {int(r["reviewer"]) for r in reviewers_data if (1 == r["computer_scientist"])}
+computer_scientist_ids = {int(r["reviewer"]) for r in reviewers_data if int(r["computer_scientist"])}
 matched_paper_count = len({int(r["paper"]) for r in results_data})
 good = {int(r["paper"]) for r in results_data if int(r["reviewer"]) in computer_scientist_ids}
 print("We want all " + str(matched_paper_count) + " papers (the number being reviewed) to each have at least one computer scientist reviewing them.")
