@@ -117,7 +117,7 @@ def main(output_files_prefix='itertest',
 
     # Step -1: Am I resuming?
     def gen_problem_name(q):
-        return f"{output_files_prefix}_iter_{q}"
+        return f"{output_files_prefix}_iter_{q:03}"
 
     def gen_problem_path(q, suffix=''):
         name = to_name(gen_problem_name(q))

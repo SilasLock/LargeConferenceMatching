@@ -203,12 +203,12 @@ class MatchingILP(BaseILP):
 
                 reviewers += missing_reviewers
                 ### THIS IS UNNEEDED NOW SINCE WE INCREASE RHS TO FIXED AMOUNT
-                # if pid in self.rejected_papers:
+                if pid in self.rejected_papers:
                 #     # If this paper is rejected, we only want to put a constraint on the reviewers who aren't already assigned to it.
                 #     pairs_not_in_fixed_matching = tracked_pairs - fixed_pairs
                 #     reviewers = [r for (p,r) in pairs_not_in_fixed_matching]
                 #     logger.info(f"Paper {pid} was rejected, so we won't add new reviewers for it.")
-                #     rejection_record.append(pid)
+                    rejection_record.append(pid)
 
             reviewer_vars = list(map(lambda x: 'x{}_{}'.format(pid,x),reviewers))
             coefs = [1]*len(reviewer_vars)
@@ -239,11 +239,11 @@ class MatchingILP(BaseILP):
             coefs = list(map(lambda x: x, computer_science_expertise))
             coefs.append(-1)
             # cs_p can't be more than the computer scientists assigned to the paper.
-            eqn_ac = Equation(eqn_type='cons',name='cs_sum_over_cs_{}'.format(pid),
+            eqn_ac = Equation(eqn_type='cons',name=f'cs_sum_over_cs_{pid}',
                   var_coefs=list(zip(cs_vars, coefs)), oper=">=",
                   rhs=0)
             # cs_p can't be more than 1.
-            eqn_ac = Equation(eqn_type='cons',name='cs_expertise_{}'.format(pid),
+            eqn_ac = Equation(eqn_type='cons',name=f'cs_expertise_{pid}',
                   var_coefs=[(cs_p, 1)], oper="<=",
                   rhs=1)
             all_eqns.append(eqn_ac)

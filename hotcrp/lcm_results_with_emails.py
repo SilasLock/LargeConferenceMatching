@@ -4,6 +4,10 @@ import util
 from config import *
 import sys
 
+
+review_round = "round1"
+
+
 if len(sys.argv) not in [2,3]:
     print(f"USAGE: {sys.argv[0]} <results-file.csv> [<results-file-with-emails.csv>]")
     exit(-1)
@@ -27,14 +31,17 @@ def email(e):
     return email_aliases.get(e,e)
 
 
+rejected_papers = {p['paper'] for p in util.read_csv(DATA_WITH_NONREVIEWERS + LCM_REJECTED_PAPERS_CSV)}
 
-
-results_data = util.read_csv(results_csv)
+results_data = [r for r in util.read_csv(results_csv) if r['paper'] not in rejected_papers]
 
 reviewers_data = util.read_csv(DATA_WITH_NONREVIEWERS + LCM_REVIEWER_PROPS_CSV)
 
 conflicts_data = util.read_csv(DATA_WITH_NONREVIEWERS + LCM_CONFLICTS_CSV)
 conflicts = {(c['paper'],email(c['reviewer_email'])) for c in conflicts_data}
+
+
+
 
 def intzero(intstr):
     if not intstr:
@@ -59,13 +66,18 @@ def getzero(lookup,key):
     else:
         return lookup[key]
 
-ids_to_email = {r['reviewer']:r['reviewer_email'] for r in reviewers_data}
+fixed_solution_data = util.read_csv(DATA_WITH_NONREVIEWERS + LCM_FIXED_SOLUTION_CSV)
+fixed_solution = {(s['paper'],s['reviewer_email']) for s in fixed_solution_data}
+
+ids_to_email = {r['reviewer']:r['reviewer_email'] for r in reviewers_data + fixed_solution_data} 
 email_to_role = {r['reviewer_email']:r['role'] for r in reviewers_data}
 
 conflict_rows = []
 for r in results_data:
     reviewer = ids_to_email.get(r['reviewer'],'')
     paper = r['paper']
+
+
     
     r['reviewer_email'] = reviewer
 
@@ -145,7 +157,7 @@ print()
 for r in rev.keys():
     sbids = sorted(rev[r]['bids'])
 
-    if sbids[2] <= 0:
+    if len(sbids) >= 3 and sbids[2] <= 0:
         print(f"  * three bad bids for [{r}]")
         for k in statkeys:
             if k in rev[r]:
@@ -153,7 +165,7 @@ for r in rev.keys():
 
         print()
 
-    elif sbids[1] <= 0:
+    elif len(sbids) >= 2 and sbids[1] <= 0:
         print(f"  - two bad bids for [{r}]")
         for k in statkeys:
             if k in rev[r]:
@@ -173,7 +185,7 @@ for p in pap.keys():
     sbids = sorted(pap[p]['bids'])
 
     
-    if len(sbids) != 3:
+    if len(sbids) <= 3:
         print(f"  - needs reviewers for paper [{p}]")
         for k in statkeys:
             if k in pap[p]:
@@ -191,31 +203,35 @@ for p in pap.keys():
 
 
 print(f"ALL UNHAPPY PAPERS: {unhappy_papers}")
-print(f"NEED REVIEWERS PAPERS: {need_reviewers}")
+print(f"NEED REVIEWERS PAPERS: {need_reviewers if len(need_reviewers) <= 20 else len(need_reviewers)}")
 
+print()
 
 computer_scientist_ids = {int(r["reviewer"]) for r in reviewers_data if int(r["computer_scientist"])}
-matched_paper_count = len({int(r["paper"]) for r in results_data})
+
+matched_papers = {int(r["paper"]) for r in results_data}
 good = {int(r["paper"]) for r in results_data if int(r["reviewer"]) in computer_scientist_ids}
-print("We want all " + str(matched_paper_count) + " papers (the number being reviewed) to each have at least one computer scientist reviewing them.")
-print("Total papers reviewed = " + str(matched_paper_count))
-print("Total papers reviewed by at least 1 computer scientist = " + str(len(good)))
-if (matched_paper_count == len(good)):
-    print("\tThese are the same value! Good work.")
-else:
-    print("\tWARNING! These are not the same value! That means there's probably some paper being reviewed by no one with CS expertise!")
+bad = matched_papers - good
+
+print(f"total papers: {len(matched_papers)}; papers with no cs reviewer: {len(bad)}")
+if bad:
+    print(f"  - {bad}")
+print()
 
 
 
 assignment = [
     {
-        'paper':r['paper'],
+        'paper':p,
         'action':"review",
-        'email':r['reviewer_email'],
-        'reviewtype':'primary' if r['role'] == "PC" else 'meta',
-        'round': 'round1' if r['role'] == "PC" else 'final'
+        'email':r,
+        'reviewtype':'primary' if rec['role'] == "PC" else 'meta',
+        'round': review_round if rec['role'] == "PC" else 'final'
     }
-    for r in results_data
+    for rec in results_data
+    for (p,r) in [(rec['paper'],rec['reviewer_email'])]
+    if (p,r) not in fixed_solution
+    and r
 ]
 
 util.write_csv(assignment_output_csv,assignment)
