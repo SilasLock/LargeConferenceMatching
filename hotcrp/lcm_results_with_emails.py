@@ -5,7 +5,7 @@ from config import *
 import sys
 
 
-review_round = "round1"
+review_round = "round2"
 
 
 if len(sys.argv) not in [2,3]:
