@@ -226,7 +226,7 @@ class MatchingILP(BaseILP):
     def add_computer_science_constraints(self):
         all_eqns = []
 
-        for group_name, group in self.paper_reviewer_df.reset_index().groupby('paper'):
+        for group_name, group in self.paper_reviewer_df.query('role == "PC"').reset_index().groupby('paper'):
             reviewers = group['reviewer']
             # We're assuming that the new reviewer data has a column called "computer_scientist", which has a Boolean for whether they qualify as one.
             computer_science_expertise = group['computer_scientist']
