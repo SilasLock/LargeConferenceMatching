@@ -207,15 +207,15 @@ print(f"NEED REVIEWERS PAPERS: {need_reviewers if len(need_reviewers) <= 20 else
 
 print()
 
-computer_scientist_ids = {int(r["reviewer"]) for r in reviewers_data if int(r["computer_scientist"])}
+computer_scientist_ids = {r["reviewer"] for r in reviewers_data if int(r["computer_scientist"]) and r['role'] == "PC"}
 
-matched_papers = {int(r["paper"]) for r in results_data}
-good = {int(r["paper"]) for r in results_data if int(r["reviewer"]) in computer_scientist_ids}
+matched_papers = {r["paper"] for r in results_data}
+good = {r["paper"] for r in results_data if r["reviewer"] in computer_scientist_ids}
 bad = matched_papers - good
 
 print(f"total papers: {len(matched_papers)}; papers with no cs reviewer: {len(bad)}")
 if bad:
-    print(f"  - {bad}")
+    print(f"  - { {int(b) for b in bad} }")
 print()
 
 
